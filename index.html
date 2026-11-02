@@ -941,18 +941,20 @@ function freshState(empty){
 }
 function normalizeDay(d, date){
   d = d && typeof d === 'object' ? d : {};
+  const deleted = {}; if (d.deleted && typeof d.deleted === 'object') Object.keys(d.deleted).forEach(k => { const ts = Number(d.deleted[k]); if (ts > 0) deleted[String(k).slice(0, 40)] = ts; });
   return {
     date: date || d.date,
     water: Math.max(0, Math.min(12, parseInt(d.water, 10) || 0)),
     energy: [1,2,3,4].includes(d.energy) ? d.energy : null,
     updatedAt: Number(d.updatedAt) || 0,
+    waterAt: Number(d.waterAt) || 0, energyAt: Number(d.energyAt) || 0, deleted,
     entries: Array.isArray(d.entries) ? d.entries.filter(e => e && typeof e === 'object' && e.name).map(e => ({
       id: String(e.id || uid()), meal: MEALS.some(m => m.id === e.meal) ? e.meal : 'snack',
       name: String(e.name).slice(0, 80), serving: String(e.serving || '1 serving').slice(0, 40),
       qty: Math.max(0.01, Math.min(99, num(e.qty) || 1)),
       per: normPer(e.per), groups: Array.isArray(e.groups) ? e.groups.filter(g => typeof g === 'string') : [],
       level: [1,2,3].includes(e.level) ? e.level : null, icon: String(e.icon || '\u{1F37D}️').slice(0, 8),
-      note: String(e.note || '').slice(0, 200), createdAt: Number(e.createdAt) || 0, src: ['label','list','seed','scan','ocr'].indexOf(e.src) >= 0 ? e.src : 'seed'
+      note: String(e.note || '').slice(0, 200), createdAt: Number(e.createdAt) || 0, updatedAt: Number(e.updatedAt) || Number(e.createdAt) || 0, src: ['label','list','seed','scan','ocr'].indexOf(e.src) >= 0 ? e.src : 'seed'
     })) : []
   };
 }
@@ -1011,8 +1013,8 @@ function loadLocal(){
 }
 function saveLocal(){ try { localStorage.setItem(LS_KEY, JSON.stringify({ v: 2, state })); } catch (e) { /* storage unavailable in this browser */ } }
 
-function getDay(date){ return state.days[date] || { date, water: 0, energy: null, updatedAt: 0, entries: [] }; }
-function ensureDay(date){ if (!state.days[date]) state.days[date] = { date, water: 0, energy: null, updatedAt: 0, entries: [] }; return state.days[date]; }
+function getDay(date){ return state.days[date] || { date, water: 0, energy: null, updatedAt: 0, waterAt: 0, energyAt: 0, deleted: {}, entries: [] }; }
+function ensureDay(date){ if (!state.days[date]) state.days[date] = { date, water: 0, energy: null, updatedAt: 0, waterAt: 0, energyAt: 0, deleted: {}, entries: [] }; if (!state.days[date].deleted) state.days[date].deleted = {}; return state.days[date]; }
 function touchDay(date){ const d = ensureDay(date); d.updatedAt = Date.now(); bump(); saveLocal(); queuePush(date); }
 function touchMeta(){ state.meta.updatedAt = Date.now(); bump(); saveLocal(); queuePush('meta'); }
 
@@ -1360,14 +1362,45 @@ function markLoaded(snap){
   if (!remote.loaded) { remote.loaded = true; clearTimeout(remote.loadTimer); }
   if (['readonly', 'full', 'error'].indexOf(remote.status) < 0) setSync(remote.writable === false ? 'readonly' : 'synced');
 }
+
+// ---------- merging two copies of the journal (entry level, so two devices never overwrite each other) ----------
+function canon(o){ return JSON.stringify(o, (k, v) => (v && typeof v === 'object' && !Array.isArray(v)) ? Object.keys(v).sort().reduce((a, kk) => { a[kk] = v[kk]; return a; }, {}) : v); }
+function mergeDay(local, remote, date){
+  const L = local ? normalizeDay(local, date) : null, R = remote ? normalizeDay(remote, date) : null;
+  if (!L) return R; if (!R) return L;
+  const tomb = {}; [L, R].forEach(side => Object.keys(side.deleted || {}).forEach(id => { tomb[id] = Math.max(tomb[id] || 0, side.deleted[id]); }));
+  const byId = {};
+  [L, R].forEach(side => side.entries.forEach(e => { const ts = e.updatedAt || e.createdAt || 0; if (tomb[e.id] && tomb[e.id] >= ts) return; const cur = byId[e.id]; if (!cur || (cur.updatedAt || cur.createdAt || 0) < ts) byId[e.id] = e; }));
+  const entries = Object.values(byId).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0) || String(a.id).localeCompare(String(b.id)));
+  const cutoff = Date.now() - 45 * 86400000; Object.keys(tomb).forEach(id => { if (tomb[id] < cutoff) delete tomb[id]; });
+  const pickField = (f, at) => { const la = L[at] || L.updatedAt || 0, ra = R[at] || R.updatedAt || 0; return ra > la ? { v: R[f], at: ra } : { v: L[f], at: la }; };
+  const w = pickField('water', 'waterAt'), en = pickField('energy', 'energyAt');
+  return { date, entries, water: w.v, waterAt: w.at, energy: en.v, energyAt: en.at, deleted: tomb, updatedAt: Math.max(L.updatedAt || 0, R.updatedAt || 0) };
+}
+function mergeMeta(local, remote){
+  const L = normalizeMeta(local), R = normalizeMeta(remote);
+  const newer = (R.updatedAt || 0) > (L.updatedAt || 0) ? R : L, older = newer === R ? L : R;
+  const out = normalizeMeta(clone(newer)); const p = out.progress, a = L.progress, b = R.progress;
+  const unionMin = (x, y) => { const o = {}; [x, y].forEach(m => Object.keys(m || {}).forEach(k => { const v = Number(m[k]) || 0; o[k] = o[k] ? Math.min(o[k], v) : v; })); return o; };
+  const union = (x, y) => Object.assign({}, y || {}, x || {});
+  p.lessons = unionMin(a.lessons, b.lessons); p.badges = unionMin(a.badges, b.badges); p.arenaDays = union(a.arenaDays, b.arenaDays); p.cases = union(a.cases, b.cases);
+  if ((b.quizBest || 0) > (a.quizBest || 0)) { p.quizBest = b.quizBest; p.quizBestDate = b.quizBestDate; } else { p.quizBest = a.quizBest; p.quizBestDate = a.quizBestDate; }
+  p.quizRounds = Math.max(a.quizRounds || 0, b.quizRounds || 0);
+  const habits = {}; [older.progress.habits, newer.progress.habits].forEach(hs => Object.keys(hs || {}).forEach(id => { const r = hs[id]; const cur = habits[id]; if (!cur) { habits[id] = clone(r); return; } cur.startDate = cur.startDate < r.startDate ? cur.startDate : r.startDate; cur.days = Object.assign({}, cur.days, r.days); cur.mastered = cur.mastered && r.mastered ? Math.min(cur.mastered, r.mastered) : (cur.mastered || r.mastered || null); cur.stopped = r.stopped; }));
+  p.habits = habits;
+  const ledger = {}; [a.rewards.ledger, b.rewards.ledger].forEach(ls => (ls || []).forEach(x => { ledger[x.id] = x; }));
+  p.rewards = Object.assign({}, newer.progress.rewards, { ledger: Object.values(ledger).sort((x, y) => x.date < y.date ? -1 : x.date > y.date ? 1 : 0).slice(-400) });
+  out.updatedAt = Math.max(L.updatedAt || 0, R.updatedAt || 0);
+  return out;
+}
 function onMetaSnap(snap){
   markLoaded(snap);
   if (remote.erasing) return;
   const data = snap.exists ? snap.data() : null;
-  const localTs = state.meta.updatedAt || 0;
-  const rts = data ? (Number(data.updatedAt) || 0) : -1;
-  if (data && rts > localTs) { state.meta = normalizeMeta(clone(data)); bump(); saveLocal(); render(); }
-  else if (rts < localTs) queuePush('meta');
+  if (!data) { queuePush('meta'); return; }
+  const merged = mergeMeta(state.meta, clone(data));
+  if (canon(merged) !== canon(normalizeMeta(state.meta))) { state.meta = merged; bump(); saveLocal(); render(); }
+  if (canon(merged) !== canon(normalizeMeta(clone(data)))) queuePush('meta');
 }
 function onDaysSnap(snap){
   markLoaded(snap);
@@ -1379,9 +1412,9 @@ function onDaysSnap(snap){
     if (!date) return;
     seen.add(date); if (!oldest || date < oldest) oldest = date;
     const local = state.days[date];
-    const rts = Number(d.updatedAt) || 0, lts = local ? (local.updatedAt || 0) : -1;
-    if (rts > lts) { state.days[date] = normalizeDay(clone(d), date); changed = true; }
-    else if (lts > rts) queuePush(date);
+    const merged = mergeDay(local, d, date);
+    if (!local || canon(merged) !== canon(normalizeDay(local, date))) { state.days[date] = merged; changed = true; }
+    if (canon(merged) !== canon(normalizeDay(clone(d), date))) queuePush(date);
   });
   const complete = snap.size < 366;
   Object.keys(state.days).forEach(date => {
@@ -2232,10 +2265,10 @@ function saveSheet(){
   const day = ensureDay(sh.date);
   if (sh.kind === 'edit') {
     const e = day.entries.find(x => x.id === sh.id); if (!e) { closeSheet(); return; }
-    Object.assign(e, { meal: sh.meal, name: d.name, serving: d.serving, qty: d.qty, per: normPer(d.per), groups: d.groups || [], level: d.level || null, note: d.note || '', icon: d.icon || '\u{1F37D}️' });
+    Object.assign(e, { meal: sh.meal, name: d.name, serving: d.serving, qty: d.qty, per: normPer(d.per), groups: d.groups || [], level: d.level || null, note: d.note || '', icon: d.icon || '\u{1F37D}️', updatedAt: Date.now() });
     toast('Saved');
   } else {
-    day.entries.push({ id: uid(), meal: sh.meal, name: d.name, serving: d.serving, qty: d.qty, per: normPer(d.per), groups: d.groups || [], level: d.level || null, note: d.note || '', icon: d.icon || '\u{1F37D}️', createdAt: Date.now(), src: ['list','scan','ocr'].indexOf(d.src) >= 0 ? d.src : 'label' });
+    day.entries.push({ id: uid(), meal: sh.meal, name: d.name, serving: d.serving, qty: d.qty, per: normPer(d.per), groups: d.groups || [], level: d.level || null, note: d.note || '', icon: d.icon || '\u{1F37D}️', createdAt: Date.now(), updatedAt: Date.now(), src: ['list','scan','ocr'].indexOf(d.src) >= 0 ? d.src : 'label' });
     toast((MEALS.find(m => m.id === sh.meal) || MEALS[3]).icon + ' Logged in ' + (MEALS.find(m => m.id === sh.meal) || MEALS[3]).name);
   }
   const date = sh.date;
@@ -2248,7 +2281,7 @@ function saveSheet(){
 }
 function deleteEntry(){
   const sh = ui.sheet; if (!sh || sh.kind !== 'edit') return;
-  const day = ensureDay(sh.date); day.entries = day.entries.filter(x => x.id !== sh.id);
+  const day = ensureDay(sh.date); day.entries = day.entries.filter(x => x.id !== sh.id); day.deleted[sh.id] = Date.now();
   const date = sh.date; closeSheet(); touchDay(date); render(); toast('Deleted');
 }
 
@@ -2317,8 +2350,8 @@ const ACTIONS = {
   'set-level': el => { readDraftFromForm(); const d = ui.sheet.draft; const k = parseInt(el.dataset.k, 10); d.level = d.level === k ? null : k; renderSheet(); },
   'entry-delete': () => { ui.sheet.confirmDelete = true; readDraftFromForm(); renderSheet(); },
   'entry-delete-yes': () => deleteEntry(),
-  'water': el => { const n = parseInt(el.dataset.n, 10); const before = snapshotGame(); const day = ensureDay(ui.date); day.water = day.water === n ? n - 1 : n; touchDay(ui.date); renderView(); checkBadges(); checkHabits(); afterChange(before); },
-  'energy': el => { const n = parseInt(el.dataset.n, 10); const before = snapshotGame(); const day = ensureDay(ui.date); day.energy = day.energy === n ? null : n; touchDay(ui.date); renderView(); checkBadges(); afterChange(before); },
+  'water': el => { const n = parseInt(el.dataset.n, 10); const before = snapshotGame(); const day = ensureDay(ui.date); day.water = day.water === n ? n - 1 : n; day.waterAt = Date.now(); touchDay(ui.date); renderView(); checkBadges(); checkHabits(); afterChange(before); },
+  'energy': el => { const n = parseInt(el.dataset.n, 10); const before = snapshotGame(); const day = ensureDay(ui.date); day.energy = day.energy === n ? null : n; day.energyAt = Date.now(); touchDay(ui.date); renderView(); checkBadges(); afterChange(before); },
   'lesson-open': el => { ui.lesson = { id: el.dataset.id, index: 0, answers: {} }; ui.sort = null; ui.sugar = null; ui.nfTip = null; ui.arena = null; setView('learn'); },
   'lesson-close': () => { ui.lesson = null; setView('learn'); },
   'lesson-prev': () => { if (ui.lesson.index > 0) { ui.lesson.index--; ui.scrollReset = true; renderView(); } },
