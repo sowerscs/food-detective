@@ -617,6 +617,7 @@ function plural(noun, n){ if (!noun) return ''; if (n === 1) return noun; if (/s
 function servingLabel(e){
   const q = num(e.qty) || 1; const ps = parseServing(e.serving);
   if (!ps) return fmt(q) + ' × ' + e.serving;
+  if (ps.kind === 'size' && Math.abs(q - 1) < 0.001) return e.serving;
   const total = q * ps.amount;
   if (ps.unit) return fmtAmount(total) + ' ' + (ps.unit === 'cup' ? plural('cup', total) : UNITS[ps.unit].label) + (ps.alt ? ' (' + fmtAmount(q * ps.alt.amount) + ' ' + UNITS[ps.alt.unit].label + ')' : '');
   if (ps.kind === 'count' && ps.noun && Math.abs(total - Math.round(total * 4) / 4) < 0.001) return fmtAmount(total) + ' ' + plural(ps.noun, total) + (ps.alt ? ' (' + fmtAmount(q * ps.alt.amount) + ' ' + UNITS[ps.alt.unit].label + ')' : '');
@@ -1015,8 +1016,8 @@ function saveLocal(){ try { localStorage.setItem(LS_KEY, JSON.stringify({ v: 2, 
 
 function getDay(date){ return state.days[date] || { date, water: 0, energy: null, updatedAt: 0, waterAt: 0, energyAt: 0, deleted: {}, entries: [] }; }
 function ensureDay(date){ if (!state.days[date]) state.days[date] = { date, water: 0, energy: null, updatedAt: 0, waterAt: 0, energyAt: 0, deleted: {}, entries: [] }; if (!state.days[date].deleted) state.days[date].deleted = {}; return state.days[date]; }
-function touchDay(date){ const d = ensureDay(date); d.updatedAt = Date.now(); bump(); saveLocal(); queuePush(date); }
-function touchMeta(){ state.meta.updatedAt = Date.now(); bump(); saveLocal(); queuePush('meta'); }
+function touchDay(date){ const d = ensureDay(date); d.updatedAt = Date.now(); bump(); saveLocal(); queuePush(date); queueReportPushes(); }
+function touchMeta(){ state.meta.updatedAt = Date.now(); bump(); saveLocal(); queuePush('meta'); queueReportPushes(); }
 
 // ---------- nutrition math ----------
 const KEYS = ['kcal','p','c','f','fiber','sugar','added','sodium','calcium'];
@@ -1236,6 +1237,47 @@ function checkBadges(){
   if (earned.length) { touchMeta(); earned.forEach(id => { const b = BADGES.find(x => x.id === id); if (b) celebrate(b.em + ' Badge earned. ' + b.name + '!'); }); }
 }
 
+
+// ---------- weekly report (written to the family journal so the Monday email can read it) ----------
+function entryReport(e){ const t = entryTotals(e); return { name: e.name, amount: servingLabel(e), kcal: Math.round(t.kcal), p: round1(t.p), c: round1(t.c), f: round1(t.f), fiber: e.per.fiber == null ? null : round1(t.fiber), added: e.per.added == null ? null : round1(t.added), sodium: e.per.sodium == null ? null : Math.round(t.sodium), groups: e.groups || [], level: e.level || null, traits: entryTraits(e).map(x => x.label), src: e.src || '' }; }
+function weeklyReport(ws){
+  const we = addDays(ws, 6); const p = state.meta.progress; const s = state.meta.settings; const byDate = starsByDate();
+  const days = []; const sum = {}; KEYS.forEach(k => sum[k] = 0); const groupDays = {}; GROUPS.forEach(g => groupDays[g.id] = 0);
+  let logged = 0, fueled = 0, missionsDone = 0, water = 0, energySum = 0, energyDays = 0, sweet = 0, level3 = 0, swapDaysN = 0; const names = new Set(); const newNames = new Set(); const missingMeal = { breakfast: 0, lunch: 0, dinner: 0 };
+  for (let i = 0; i < 7; i++) {
+    const date = addDays(ws, i); const d = getDay(date); const t = totals(d); const g = groupsOf(d); const qs = questStatus(date);
+    const meals = {}; MEALS.forEach(m => { meals[m.id] = d.entries.filter(e => e.meal === m.id).map(entryReport); });
+    if (d.entries.length) { logged++; KEYS.forEach(k => sum[k] += t[k]); ['breakfast','lunch','dinner'].forEach(m => { if (!meals[m].length) missingMeal[m]++; }); }
+    if (fueledDay(d)) fueled++;
+    GROUPS.forEach(x => { if (g.has(x.id)) groupDays[x.id]++; });
+    missionsDone += qs.filter(x => x.done).length; water += d.water || 0; if (d.energy) { energySum += d.energy; energyDays++; }
+    d.entries.forEach(e => { names.add(e.name.trim().toLowerCase()); if (isNewFood(e, date)) newNames.add(e.name); const tr = entryTraits(e).map(x => x.id); if (tr.indexOf('sugary-drink') >= 0) sweet++; if (e.level === 3) level3++; });
+    if (swapTried(d, date)) swapDaysN++;
+    days.push({ date, weekday: WEEKDAYS[parseDate(date).getDay()], logged: d.entries.length > 0, fueled: fueledDay(d), water: d.water || 0, energy: d.energy || null, energyName: d.energy ? FACES[d.energy - 1].name : '', stars: byDate[date] || 0, missions: qs.map(x => ({ text: x.q.text, done: x.done })), groups: GROUPS.filter(x => g.has(x.id)).map(x => x.id), meals, totals: { kcal: Math.round(t.kcal), p: round1(t.p), c: round1(t.c), f: round1(t.f), fiber: round1(t.fiber), added: round1(t.added), sodium: Math.round(t.sodium) } });
+  }
+  const wk = goalStatus('weekly', ws); const mo = goalStatus('monthly', monthKey(we)); const ch = challengeProgress(ws);
+  const inWeek = ts => { const d = dateStr(new Date(Number(ts) || 0)); return d >= ws && d <= we; };
+  const lessonsThisWeek = Object.keys(p.lessons).filter(id => inWeek(p.lessons[id])).map(id => (LESSONS.find(l => l.id === id) || {}).title || id);
+  const badgesThisWeek = Object.keys(p.badges).filter(id => inWeek(p.badges[id])).map(id => (BADGES.find(b => b.id === id) || {}).name || id);
+  const habits = activeHabits().map(id => { const h = habitDef(id); const n = habitDays(id); const L = habitLevel(n); let done = 0; for (let i = 0; i < 7; i++) if (habitDoneOn(id, addDays(ws, i))) done++; return { name: h.name, days: n, goal: HABIT_GOAL, level: L ? L.name : '', doneThisWeek: done }; });
+  const n = stars(); const rk = rankFor(n); const si = streakInfo();
+  const rec = [];
+  const worstMeal = Object.keys(missingMeal).sort((a, b) => missingMeal[b] - missingMeal[a])[0];
+  if (logged >= 3 && fueled < 4 && missingMeal[worstMeal] >= 2) rec.push({ id: 'fueled', text: (worstMeal.charAt(0).toUpperCase() + worstMeal.slice(1)) + ' was missing from the log on ' + missingMeal[worstMeal] + ' of the ' + logged + ' logged days. Logging it together at the table is the easiest way to turn those into fueled days.' });
+  if (logged >= 3 && groupDays.veg < Math.min(4, logged)) rec.push({ id: 'veg', text: 'Veggies showed up on ' + groupDays.veg + ' of ' + logged + ' logged days. A veggie at dinner is the simplest add, and it is one of the habits she can pick in the Habit Lab.' });
+  if (logged >= 3 && groupDays.fruit < Math.min(4, logged)) rec.push({ id: 'fruit', text: 'Fruit showed up on ' + groupDays.fruit + ' of ' + logged + ' logged days. Fruit with breakfast is a habit she can start with one tap.' });
+  if (logged >= 3 && water / logged < 4) rec.push({ id: 'water', text: 'Water averaged ' + round1(water / logged) + ' cups on logged days. A bottle next to her homework spot usually fixes that on its own.' });
+  if (sweet >= 3) rec.push({ id: 'sweet', text: 'Sweet drinks appeared ' + sweet + ' times this week. The swap ideas in the app point to water, milk, or 100 percent juice in a small glass. No need to make a thing of it, just keep the everyday drinks within reach.' });
+  if (logged >= 3 && names.size < 10) rec.push({ id: 'variety', text: 'She logged ' + names.size + ' different foods. Variety is where the vitamins hide, so one new food this week, chosen by her, is a good mission.' });
+  if (wk.reached && !wk.given) rec.push({ id: 'reward', text: 'She reached the weekly star goal (' + wk.n + ' of ' + wk.goal + '). It has not been marked as given yet, so a quick celebration and a tap in the Chief’s office closes the loop.' });
+  if (!wk.reached && logged >= 5) rec.push({ id: 'goal', text: 'She logged ' + logged + ' days but landed at ' + wk.n + ' of ' + wk.goal + ' stars. If this repeats, lower the weekly goal a little. The target should be reachable most weeks.' });
+  if (energyDays >= 4 && energySum / energyDays <= 2) rec.push({ id: 'energy', text: 'Her energy check-ins averaged low this week. Worth a look at sleep and breakfast before anything else.' });
+  if (lessonsThisWeek.length === 0 && Object.keys(p.lessons).length < LESSONS.length) rec.push({ id: 'lesson', text: 'No Academy lessons this week. One lesson together takes about five minutes and is worth 3 stars.' });
+  return { version: 1, weekStart: ws, weekEnd: we, name: s.name, generatedAt: Math.max(state.meta.updatedAt || 0, Math.max.apply(null, days.map(d => (state.days[d.date] || {}).updatedAt || 0))), showNumbers: !!s.showNumbers, refKcal: refs().kcal,
+    week: { daysLogged: logged, fueledDays: fueled, stars: wk.n, weeklyGoal: { goal: wk.goal, n: wk.n, reached: wk.reached, given: !!wk.given, reward: wk.label }, monthlyGoal: { key: mo.key, goal: mo.goal, n: mo.n, reached: mo.reached, given: !!mo.given, reward: mo.label }, missionsDone, missionsTotal: 21, distinctFoods: names.size, newFoods: Array.from(newNames).slice(0, 20), swapDays: swapDaysN, waterAvg: logged ? round1(water / logged) : 0, energyAvg: energyDays ? round1(energySum / energyDays) : null, energyDays, groupDays, sweetDrinks: sweet, level3Foods: level3, lessonsThisWeek, badgesThisWeek, rank: rk.name, lifetimeStars: n, streak: si.count, habits, challenge: { name: ch.ch.name, text: ch.ch.text, n: ch.n, target: ch.ch.target, done: ch.done }, totals: { kcal: Math.round(sum.kcal), p: round1(sum.p), c: round1(sum.c), f: round1(sum.f), fiber: round1(sum.fiber), added: round1(sum.added), sodium: Math.round(sum.sodium) }, avgPerLoggedDay: logged ? { kcal: Math.round(sum.kcal / logged), p: round1(sum.p / logged), c: round1(sum.c / logged), f: round1(sum.f / logged), fiber: round1(sum.fiber / logged), added: round1(sum.added / logged), sodium: Math.round(sum.sodium / logged) } : null },
+    days, recommendations: rec };
+}
+function queueReportPushes(){ const ws = weekStart(todayStr()); queuePush('report:' + ws); queuePush('report:' + addDays(ws, -7)); }
 // ---------- cloud sync (artifact db capability) ----------
 const remote = { db: null, downloads: null, user: null, status: 'local', detail: '', writable: null, pushTimers: {}, chains: {}, lastPushed: {}, loaded: false, loadTimer: null, unsubs: [], erasing: false };
 function setSync(status, detail){ remote.status = status; remote.detail = detail || ''; renderTop(); if (ui.view === 'grownups') renderView(); }
@@ -1422,7 +1464,7 @@ function onDaysSnap(snap){
     if (!state.days[date].updatedAt) return;
     if (complete || (oldest && date >= oldest)) queuePush(date);
   });
-  if (changed) { bump(); saveLocal(); render(); }
+  if (changed) { bump(); saveLocal(); render(); queueReportPushes(); }
 }
 function onSubError(err){
   clearTimeout(remote.loadTimer);
@@ -1437,10 +1479,12 @@ function queuePush(key){
 }
 function pushDoc(key){
   if (!remote.db || remote.writable === false) return;
-  const path = key === 'meta' ? 'journal/meta' : 'days/' + key;
-  const body = key === 'meta' ? clone(state.meta) : (state.days[key] ? clone(state.days[key]) : null);
+  const isReport = key.indexOf('report:') === 0;
+  const path = key === 'meta' ? 'journal/meta' : isReport ? 'reports/' + key.slice(7) : 'days/' + key;
+  let body;
+  try { body = key === 'meta' ? clone(state.meta) : isReport ? weeklyReport(key.slice(7)) : (state.days[key] ? clone(state.days[key]) : null); } catch (e) { body = null; }
   if (!body) return;
-  if (key !== 'meta') body.date = key;
+  if (key !== 'meta' && !isReport) body.date = key;
   const ser = JSON.stringify(body);
   if (remote.lastPushed[path] === ser) return;
   const prev = remote.chains[path] || Promise.resolve();
