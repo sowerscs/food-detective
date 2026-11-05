@@ -76,6 +76,19 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .sync-dot{width:10px;height:10px;border-radius:50%;background:var(--line);flex:0 0 auto}
 .sync-dot.synced{background:var(--good)}
 .sync-dot.busy{background:var(--sun)}
+.sync-dot.bad{background:var(--bad)}
+.brand-tag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync-pill{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border-radius:16px;border:0;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);font:inherit;font-size:12px;font-weight:800;white-space:nowrap;flex:0 0 auto;cursor:pointer}
+.sync-line{display:flex;align-items:center;gap:8px}
+.dev{padding:8px 0;border-top:1px solid var(--line)}
+.dev:first-of-type{border-top:0}
+.dev-name{font-weight:800}
+.sync-banner{cursor:pointer}
+.join-card{text-align:center;margin-top:18px}
+.join-card .field{text-align:left}
+.join-mark svg{width:64px;height:64px}
+.join-input{text-align:center;font-size:22px;letter-spacing:2px;font-weight:800;text-transform:uppercase}
+body.joining .tabbar{display:none}
 .icon-btn{width:44px;height:44px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);font-size:24px;line-height:1;flex:0 0 auto}
 .icon-btn svg{width:22px;height:22px}
 .view-wrap{position:relative;flex:1 1 auto;min-height:0;display:flex}
@@ -932,12 +945,13 @@ function seedDay(){
     mk('seed6', 'lunch', 'Gayo Azul Gouda cheese', '1 slice (21 g)', 2, { kcal: 70, p: 5, c: 0, f: 6, fiber: 0, sugar: 0, added: 0, sodium: 140, calcium: 160, satfat: 4 }, ['dairy'], 2, '\u{1F9C0}')
   ] };
 }
-function defaultSettings(){ return { name: 'Mila', age: 9, activity: 'mid', refKcal: null, refP: null, refC: null, refF: null, showNumbers: false, showSwaps: true }; }
+function defaultSettings(){ return { name: '', age: 9, activity: 'mid', refKcal: null, refP: null, refC: null, refF: null, showNumbers: false, showSwaps: true }; }
 function defaultRewards(){ return { weeklyGoal: 50, weeklyReward: 'Pick the family activity for the weekend', monthlyGoal: 200, monthlyReward: 'A bigger reward we choose together', ledger: [], bonuses: [] }; }
 function defaultProgress(){ return { lessons: {}, quizBest: 0, quizBestDate: null, quizRounds: 0, badges: {}, arenaDays: {}, cases: {}, habits: {}, rewards: defaultRewards() }; }
+function demoMode(){ try { return localStorage.getItem('fe.demo') === '1'; } catch (e) { return false; } }
 function freshState(empty){
   const days = {};
-  if (!empty) days[SEED_DATE] = seedDay();
+  if (!empty && demoMode()) days[SEED_DATE] = seedDay();
   return { meta: { settings: defaultSettings(), progress: defaultProgress(), updatedAt: SEED_TS }, days };
 }
 function normalizeDay(d, date){
@@ -955,7 +969,8 @@ function normalizeDay(d, date){
       qty: Math.max(0.01, Math.min(99, num(e.qty) || 1)),
       per: normPer(e.per), groups: Array.isArray(e.groups) ? e.groups.filter(g => typeof g === 'string') : [],
       level: [1,2,3].includes(e.level) ? e.level : null, icon: String(e.icon || '\u{1F37D}️').slice(0, 8),
-      note: String(e.note || '').slice(0, 200), createdAt: Number(e.createdAt) || 0, updatedAt: Number(e.updatedAt) || Number(e.createdAt) || 0, src: ['label','list','seed','scan','ocr'].indexOf(e.src) >= 0 ? e.src : 'seed'
+      note: String(e.note || '').slice(0, 200), createdAt: Number(e.createdAt) || 0, updatedAt: Number(e.updatedAt) || Number(e.createdAt) || 0, src: ['label','list','seed','scan','ocr'].indexOf(e.src) >= 0 ? e.src : 'seed',
+      dev: String(e.dev || '').slice(0, 40), by: String(e.by || '').slice(0, 40)
     })) : []
   };
 }
@@ -971,7 +986,7 @@ function normPer(p){
 function normalizeMeta(m){
   m = m && typeof m === 'object' ? m : {};
   const s = Object.assign(defaultSettings(), m.settings || {});
-  s.name = String(s.name || 'Detective').slice(0, 30);
+  s.name = String(s.name || '').slice(0, 30);
   s.age = KCAL_TABLE[s.age] ? Number(s.age) : 9;
   s.activity = ACTIVITIES.some(a => a.id === s.activity) ? s.activity : 'mid';
   ['refKcal','refP','refC','refF'].forEach(k => { s[k] = s[k] == null || s[k] === '' ? null : Math.max(0, num(s[k])) || null; });
@@ -989,10 +1004,10 @@ function normalizeMeta(m){
   p.rewards = rw;
   const hb = p.habits && typeof p.habits === 'object' ? p.habits : {};
   p.habits = {};
-  Object.keys(hb).forEach(id => { const r = hb[id]; if (!r || typeof r !== 'object' || !/^\d{4}-\d{2}-\d{2}$/.test(String(r.startDate))) return; p.habits[id] = { startDate: r.startDate, days: r.days && typeof r.days === 'object' ? r.days : {}, mastered: Number(r.mastered) || null, stopped: Number(r.stopped) || null }; });
+  Object.keys(hb).forEach(id => { const r = hb[id]; if (!r || typeof r !== 'object' || !/^\d{4}-\d{2}-\d{2}$/.test(String(r.startDate))) return; p.habits[id] = { startDate: r.startDate, days: r.days && typeof r.days === 'object' ? r.days : {}, mastered: Number(r.mastered) || null, stopped: Number(r.stopped) || null, at: Number(r.at) || 0 }; });
   p.quizBest = Math.max(0, Math.min(8, parseInt(p.quizBest, 10) || 0));
   p.quizRounds = Math.max(0, parseInt(p.quizRounds, 10) || 0);
-  return { settings: s, progress: p, updatedAt: Number(m.updatedAt) || 0 };
+  return { settings: s, progress: p, updatedAt: Number(m.updatedAt) || 0, settingsAt: Number(m.settingsAt) || 0, rewardsAt: Number(m.rewardsAt) || 0, erasedAt: Number(m.erasedAt) || 0 };
 }
 function normalizeState(st){
   st = st && typeof st === 'object' ? st : {};
@@ -1114,7 +1129,7 @@ function habitStars(){ let n = 0; Object.keys(habitRecs()).forEach(id => { const
 function checkHabits(){
   Object.keys(habitRecs()).forEach(id => {
     const rec = habitRecs()[id];
-    if (!rec.mastered && habitDays(id) >= HABIT_GOAL) { rec.mastered = Date.now(); touchMeta(); const h = habitDef(id); celebrate(h.em + ' Habit mastered! ' + h.name + ' is part of you now.'); }
+    if (!rec.mastered && habitDays(id) >= HABIT_GOAL) { rec.mastered = Date.now(); rec.at = Date.now(); touchMeta(); const h = habitDef(id); celebrate(h.em + ' Habit mastered! ' + h.name + ' is part of you now.'); }
   });
 }
 // ---------- daily detective case ----------
@@ -1278,20 +1293,32 @@ function weeklyReport(ws){
     days, recommendations: rec };
 }
 function queueReportPushes(){ const ws = weekStart(todayStr()); queuePush('report:' + ws); queuePush('report:' + addDays(ws, -7)); }
-// ---------- cloud sync (artifact db capability) ----------
-const remote = { db: null, downloads: null, user: null, status: 'local', detail: '', writable: null, pushTimers: {}, chains: {}, lastPushed: {}, loaded: false, loadTimer: null, unsubs: [], erasing: false };
-function setSync(status, detail){ remote.status = status; remote.detail = detail || ''; renderTop(); if (ui.view === 'grownups') renderView(); }
-async function getClaude(){
-  for (let i = 0; i < 30; i++) { if (window.claude && typeof window.claude.use === 'function') return window.claude; await sleep(100); }
-  return null;
-}
-// Family sync (Firebase). Paste the firebaseConfig object from the Firebase console between the braces to turn it on.
-// Every device that enters the same family code in the Chief's office shares one journal. Leave it null to run without it.
+// ---------- family journal sync (Firebase) ----------
+// How it stays reliable
+// 1. Every change is saved on the device first and put in an outbox that survives closing the app.
+// 2. The outbox is sent with a transaction that reads the cloud copy, merges it with this device's copy
+//    entry by entry, and writes the result, so two devices can never overwrite each other.
+// 3. Merges give the same answer on every device (ties broken the same way), so devices always converge.
+// 4. Anything that fails is retried on a timer, when the app comes back to the screen, and when the internet returns.
+// 5. Each device reports itself (name, last sync, waiting changes, app version) so a parent can see them all.
+const APP_VERSION = '4.0.0';
 const FIREBASE_CONFIG = { apiKey: "AIzaSyAll5XE3Afsy4a3qvKTsCQr1q3p9QovLe4", authDomain: "food-explorer-7f778.firebaseapp.com", projectId: "food-explorer-7f778", storageBucket: "food-explorer-7f778.firebasestorage.app", messagingSenderId: "546707480929", appId: "1:546707480929:web:f5e02ee46d540b33832520" };
 const FIREBASE_VERSION = '10.14.1';
-function familyCode(){ try { return (localStorage.getItem('fe.family') || '').trim(); } catch (e) { return ''; } }
-function setFamilyCode(code){ try { if (code) localStorage.setItem('fe.family', code); else localStorage.removeItem('fe.family'); } catch (e) { /* ignore */ } }
-function normalizeCode(code){ return String(code || '').trim().toUpperCase().replace(/\s+/g, '-'); }
+const remote = { M: null, authM: null, fs: null, auth: null, fam: '', status: 'local', detail: '', loaded: false, gotMeta: false, gotDays: false, unsubs: [], flushing: false, again: false, flushTimer: null, loadTimer: null, retryTimer: null, retryMs: 0, lastOk: 0, lastPull: 0, lastResume: 0, devices: [], deviceAt: 0, gen: 0, pendingSince: 0, updAt: 0, downloads: null };
+try { remote.lastOk = Number(localStorage.getItem('fe.lastSync')) || 0; } catch (e) { /* ignore */ }
+
+// ---------- family code ----------
+function normalizeCode(code){
+  let c = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  if (/^[A-Z]+[0-9]+$/.test(c)) c = c.replace(/^([A-Z]+)([0-9]+)$/, '$1-$2');
+  return c.slice(0, 40);
+}
+let memFamily = '';
+function familyCode(){ try { return (localStorage.getItem('fe.family') || '').trim() || memFamily; } catch (e) { return memFamily; } }
+function setFamilyCode(code){ memFamily = code || ''; try { if (code) localStorage.setItem('fe.family', code); else localStorage.removeItem('fe.family'); } catch (e) { /* storage blocked: remembered for this visit only */ } }
+function migrateFamilyCode(){ const c = familyCode(); if (c && normalizeCode(c) !== c) setFamilyCode(normalizeCode(c)); }
+function needsJoin(){ return !!FIREBASE_CONFIG && !familyCode(); }
+function joinLink(code){ const base = location.protocol === 'https:' ? location.origin + location.pathname : 'https://sowerscs.github.io/food-detective/'; return base + '#join=' + encodeURIComponent(code || familyCode()); }
 function sha256(ascii){
   function rotr(v, a){ return (v >>> a) | (v << (32 - a)); }
   const maxWord = Math.pow(2, 32); let result = '';
@@ -1324,212 +1351,406 @@ function sha256(ascii){
   for (let i = 0; i < 8; i++) for (let j = 3; j + 1; j--) { const b = (h[i] >> (j * 8)) & 255; result += ((b < 16) ? 0 : '') + b.toString(16); }
   return result;
 }
-function mapFirestoreError(e){
-  const code = String(e && e.code || '').replace(/^firestore\//, '');
-  const map = { 'permission-denied': 'invalid_argument', 'unauthenticated': 'invalid_argument', 'unavailable': 'unavailable', 'resource-exhausted': 'quota_exceeded', 'deadline-exceeded': 'unavailable' };
-  return { code: map[code] || 'unavailable', message: (e && e.message) || code };
+// ---------- this device ----------
+function deviceId(){ try { let id = localStorage.getItem('fe.device'); if (!id) { id = 'd' + uid(); localStorage.setItem('fe.device', id); } return id; } catch (e) { return 'd-unsaved'; } }
+function isStandalone(){ try { return window.navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches); } catch (e) { return false; } }
+function deviceKind(){
+  const ua = navigator.userAgent || '';
+  const os = /iPhone/.test(ua) ? 'iPhone' : (/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) ? 'iPad' : /Android/.test(ua) ? (/Mobile/.test(ua) ? 'Android phone' : 'Android tablet') : /CrOS/.test(ua) ? 'Chromebook' : /Macintosh/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows PC' : 'Computer';
+  let br = isStandalone() ? 'home screen app' : /EdgA?\/|EdgiOS/.test(ua) ? 'Edge' : (/CriOS|Chrome\//.test(ua) && !/OPR\//.test(ua)) ? 'Chrome' : /FxiOS|Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'browser';
+  if (/FBAN|FBAV|Instagram|Line\/|GSA\//.test(ua)) br = 'in-app browser';
+  return os + ', ' + br;
 }
-async function initFirebase(){
-  const code = familyCode();
-  if (!FIREBASE_CONFIG || !code) return false;
-  setSync('connecting');
-  try {
-    const base = 'https://www.gstatic.com/firebasejs/' + FIREBASE_VERSION + '/';
-    const mods = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
-    const appM = mods[0], authM = mods[1], fsM = mods[2];
-    const app = appM.getApps && appM.getApps().length ? appM.getApp() : appM.initializeApp(FIREBASE_CONFIG);
-    let fs; try { fs = fsM.initializeFirestore(app, { localCache: fsM.persistentLocalCache() }); } catch (e) { fs = fsM.getFirestore(app); }
-    const auth = authM.getAuth(app);
-    if (!auth.currentUser) await authM.signInAnonymously(auth);
-    const fam = 'families/' + sha256(normalizeCode(code));
-    const wrapDoc = d => ({ id: d.id, exists: d.exists(), data: () => d.data(), metadata: { fromCache: !!(d.metadata && d.metadata.fromCache), hasPendingWrites: !!(d.metadata && d.metadata.hasPendingWrites) } });
-    const docRef = p => { const ref = fsM.doc(fs, fam + '/' + p); return {
-      id: ref.id, path: p,
-      get: async () => wrapDoc(await fsM.getDoc(ref)),
-      set: body => fsM.setDoc(ref, body).catch(e => { throw mapFirestoreError(e); }),
-      delete: () => fsM.deleteDoc(ref).catch(e => { throw mapFirestoreError(e); }),
-      onSnapshot: (next, err) => fsM.onSnapshot(ref, d => next(wrapDoc(d)), e => { if (err) err(mapFirestoreError(e)); })
-    }; };
-    const colRef = p => { const parts = []; const q = {
-      orderBy: (f, dir) => { parts.push(fsM.orderBy(f, dir || 'asc')); return q; },
-      limit: n => { parts.push(fsM.limit(n)); return q; },
-      onSnapshot: (next, err) => fsM.onSnapshot(fsM.query.apply(null, [fsM.collection(fs, fam + '/' + p)].concat(parts)), snap => next({ docs: snap.docs.map(wrapDoc), size: snap.size, empty: snap.empty, metadata: { fromCache: !!snap.metadata.fromCache, hasPendingWrites: !!snap.metadata.hasPendingWrites } }), e => { if (err) err(mapFirestoreError(e)); })
-    }; return q; };
-    remote.db = { doc: docRef, collection: colRef };
-    remote.kind = 'family';
-    subscribeRemote();
-    return true;
-  } catch (e) {
-    remote.db = null; remote.kind = '';
-    setSync('error', (e && e.message) || 'could not reach Firebase');
-    return true;
+function deviceName(){ try { return (localStorage.getItem('fe.deviceName') || '').trim() || deviceKind(); } catch (e) { return deviceKind(); } }
+function setDeviceName(n){ try { if (n) localStorage.setItem('fe.deviceName', n.slice(0, 30)); else localStorage.removeItem('fe.deviceName'); } catch (e) { /* ignore */ } }
+
+// ---------- outbox (survives closing the app) ----------
+const DIRTY_KEY = 'fe.dirty';
+let dirty = {}; let dirtyN = 0;
+try { const d = JSON.parse(localStorage.getItem(DIRTY_KEY) || '{}'); if (d && typeof d === 'object') dirty = d; } catch (e) { dirty = {}; }
+function saveDirty(){ try { localStorage.setItem(DIRTY_KEY, JSON.stringify(dirty)); } catch (e) { /* ignore */ } }
+function isReportKey(k){ return k.indexOf('report:') === 0; }
+function pendingKeys(){ return Object.keys(dirty).filter(k => !isReportKey(k)); }
+function queuePush(key){
+  dirty[key] = Date.now() + '-' + (++dirtyN); saveDirty();
+  if (!isReportKey(key) && !remote.pendingSince) remote.pendingSince = Date.now();
+  if (!isReportKey(key) && remote.status === 'synced') setSync('sending');
+  scheduleFlush(isReportKey(key) ? 2500 : 250);
+}
+function queueReportPushes(){ const ws = weekStart(todayStr()); queuePush('report:' + ws); queuePush('report:' + addDays(ws, -7)); }
+function scheduleFlush(ms, force){
+  if (!remote.fam) return;
+  const due = Date.now() + (ms || 0);
+  if (remote.flushTimer && remote.flushDue <= due && !force) return;   // a send is already coming sooner
+  clearTimeout(remote.flushTimer); remote.flushDue = due;
+  remote.flushTimer = setTimeout(() => { remote.flushTimer = null; flush(); }, ms || 0);
+}
+
+// ---------- merging (same answer on every device) ----------
+function canon(o){ return JSON.stringify(o, (k, v) => (v && typeof v === 'object' && !Array.isArray(v)) ? Object.keys(v).sort().reduce((a, kk) => { a[kk] = v[kk]; return a; }, {}) : v); }
+function plain(o){ return JSON.parse(JSON.stringify(o)); }
+function erasedAt(){ return (state && state.meta && state.meta.erasedAt) || 0; }
+function mergeDay(local, theirs, date){
+  const E = erasedAt();
+  const L = local ? normalizeDay(local, date) : null, R = theirs ? normalizeDay(theirs, date) : null;
+  const sides = [L, R].filter(Boolean); if (!sides.length) return null;
+  const tomb = {}; sides.forEach(sd => Object.keys(sd.deleted || {}).forEach(id => { tomb[id] = Math.max(tomb[id] || 0, sd.deleted[id]); }));
+  const byId = {};
+  sides.forEach(sd => sd.entries.forEach(e => {
+    const ts = e.updatedAt || e.createdAt || 0;
+    if (E && ts <= E) return;
+    if (tomb[e.id] && tomb[e.id] >= ts) return;
+    const cur = byId[e.id]; if (!cur) { byId[e.id] = e; return; }
+    const cts = cur.updatedAt || cur.createdAt || 0;
+    if (ts > cts || (ts === cts && canon(e) > canon(cur))) byId[e.id] = e;
+  }));
+  const entries = Object.values(byId).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const cutoff = Date.now() - 45 * 86400000; Object.keys(tomb).forEach(id => { if (tomb[id] < cutoff || (E && tomb[id] <= E)) delete tomb[id]; });
+  const pick = (f, at) => {
+    const useAt = sides.some(sd => sd[at]); let best = null;
+    sides.forEach(sd => { const t = useAt ? (sd[at] || 0) : (sd.updatedAt || 0); const v = sd[f]; if (!best || t > best.t || (t === best.t && JSON.stringify(v) > JSON.stringify(best.v))) best = { v, t }; });
+    if (E && best.t <= E) return { v: f === 'water' ? 0 : null, at: 0 };
+    return { v: best.v, at: useAt ? best.t : 0 };
+  };
+  const w = pick('water', 'waterAt'), en = pick('energy', 'energyAt');
+  return { date, entries, water: w.v, waterAt: w.at, energy: en.v, energyAt: en.at, deleted: tomb, updatedAt: Math.max.apply(null, sides.map(sd => sd.updatedAt || 0)) };
+}
+function pickBy(a, b, ta, tb){ if (ta !== tb) return ta > tb ? a : b; return canon(a) >= canon(b) ? a : b; }
+function mergeMap(x, y){ const o = {}; [x || {}, y || {}].forEach(m => Object.keys(m).forEach(k => { if (!(k in o) || canon(m[k]) > canon(o[k])) o[k] = m[k]; })); return o; }
+function unionMin(x, y){ const o = {}; [x || {}, y || {}].forEach(m => Object.keys(m).forEach(k => { const v = Number(m[k]) || 0; o[k] = (k in o) ? Math.min(o[k], v) : v; })); return o; }
+function mergeMeta(local, theirs){
+  let L = normalizeMeta(local), R = normalizeMeta(theirs);
+  const E = Math.max(L.erasedAt, R.erasedAt);
+  const blank = () => { const m = normalizeMeta({}); m.erasedAt = E; return m; };
+  if (E) { if (L.erasedAt < E && L.updatedAt <= E) L = blank(); if (R.erasedAt < E && R.updatedAt <= E) R = blank(); }
+  const a = L.progress, b = R.progress;
+  const legacyS = !L.settingsAt && !R.settingsAt, legacyR = !L.rewardsAt && !R.rewardsAt;
+  const settings = clone(pickBy(L.settings, R.settings, legacyS ? L.updatedAt : L.settingsAt, legacyS ? R.updatedAt : R.settingsAt));
+  const cfg = x => ({ weeklyGoal: x.weeklyGoal, weeklyReward: x.weeklyReward, monthlyGoal: x.monthlyGoal, monthlyReward: x.monthlyReward });
+  const rc = clone(pickBy(cfg(a.rewards), cfg(b.rewards), legacyR ? L.updatedAt : L.rewardsAt, legacyR ? R.updatedAt : R.rewardsAt));
+  const ledger = {}; [a.rewards.ledger, b.rewards.ledger].forEach(ls => (ls || []).forEach(x => { if (!ledger[x.id] || canon(x) > canon(ledger[x.id])) ledger[x.id] = x; }));
+  const habits = {};
+  Array.from(new Set(Object.keys(a.habits).concat(Object.keys(b.habits)))).forEach(id => {
+    const x = a.habits[id], y = b.habits[id];
+    if (!x || !y) { habits[id] = clone(x || y); return; }
+    const base = clone(pickBy(x, y, x.at || 0, y.at || 0)); base.days = Object.assign({}, x.days, y.days); habits[id] = base;
+  });
+  let quizBest = a.quizBest, quizBestDate = a.quizBestDate;
+  if (b.quizBest > a.quizBest || (b.quizBest === a.quizBest && (b.quizBestDate || '9999') < (a.quizBestDate || '9999'))) { quizBest = b.quizBest; quizBestDate = b.quizBestDate; }
+  const progress = {
+    lessons: unionMin(a.lessons, b.lessons), badges: unionMin(a.badges, b.badges), arenaDays: mergeMap(a.arenaDays, b.arenaDays), cases: mergeMap(a.cases, b.cases),
+    quizBest, quizBestDate, quizRounds: Math.max(a.quizRounds || 0, b.quizRounds || 0), habits,
+    rewards: Object.assign(defaultRewards(), rc, { ledger: Object.values(ledger).sort((x, y) => x.date < y.date ? -1 : x.date > y.date ? 1 : (x.id < y.id ? -1 : 1)).slice(-400) })
+  };
+  return normalizeMeta({ settings, progress, updatedAt: Math.max(L.updatedAt, R.updatedAt), settingsAt: Math.max(L.settingsAt, R.settingsAt), rewardsAt: Math.max(L.rewardsAt, R.rewardsAt), erasedAt: E });
+}
+function applyErase(){
+  const E = erasedAt(); if (!E) return false; let changed = false;
+  Object.keys(state.days).forEach(date => {
+    const d = state.days[date]; const m = mergeDay(d, null, date);
+    if (!m.entries.length && !m.water && !m.energy) { delete state.days[date]; changed = true; }
+    else if (canon(m) !== canon(normalizeDay(d, date))) { state.days[date] = m; changed = true; }
+  });
+  return changed;
+}
+
+// ---------- status ----------
+function setSync(status, detail){
+  const changed = remote.status !== status || remote.detail !== (detail || '');
+  remote.status = status; remote.detail = detail || '';
+  if (!pendingKeys().length) remote.pendingSince = 0;
+  if (changed) refreshSyncViews();
+}
+let syncViewTimer = null;
+function refreshSyncViews(){
+  clearTimeout(syncViewTimer);
+  syncViewTimer = setTimeout(() => {
+    try {
+      renderTop();
+      const fc = document.getElementById('family-card'); if (fc) fc.outerHTML = familyCardHTML();
+      const ss = document.getElementById('sync-status'); if (ss) ss.innerHTML = syncStatusHTML();
+      const sb = document.getElementById('sync-banner'); if (sb) sb.outerHTML = syncBannerHTML();
+    } catch (e) { /* views not ready yet */ }
+  }, 30);
+}
+function errCode(e){ return String((e && e.code) || '').replace(/^(firestore|auth)\//, ''); }
+function errText(e){ const c = errCode(e); return c ? c.replace(/-/g, ' ') : String((e && e.message) || 'no connection').slice(0, 80); }
+function isOffline(e){ const c = errCode(e); return navigator.onLine === false || c === 'unavailable' || c === 'network-request-failed' || c === 'deadline-exceeded' || /offline|network|fetch|load/i.test(String(e && e.message)); }
+function ago(ts){
+  if (!ts) return 'never';
+  const s = Math.round((Date.now() - ts) / 1000);
+  if (s < 45) return 'just now'; if (s < 3600) return Math.max(1, Math.round(s / 60)) + ' min ago';
+  const d = new Date(ts); const t = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  if (dateStr(d) === todayStr()) return 'today ' + t; if (dateStr(d) === addDays(todayStr(), -1)) return 'yesterday ' + t;
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + t;
+}
+function syncText(){
+  const n = pendingKeys().length; const waiting = n ? n + (n === 1 ? ' change is' : ' changes are') + ' saved on this device and waiting to send. ' : '';
+  switch (remote.status) {
+    case 'synced': return { dot: 'synced', short: 'Synced', label: 'Everything is saved to the family journal', text: 'Last synced ' + ago(remote.lastOk) + '. Every connected phone and computer sees the same entries.' };
+    case 'sending': return { dot: 'busy', short: 'Sending', label: 'Sending to the family journal', text: waiting || 'Sending now.' };
+    case 'connecting': return { dot: 'busy', short: 'Connecting', label: 'Connecting to the family journal', text: waiting + 'Entries are always saved on this device first.' };
+    case 'slow': return { dot: 'busy', short: 'Connecting', label: 'Still reaching the family journal', text: waiting + 'The connection is slow. Nothing is lost, it will finish on its own.' };
+    case 'offline': return { dot: 'busy', short: 'Offline' + (n ? ' · ' + n : ''), label: 'No internet right now', text: waiting + 'They send by themselves when the internet is back.' };
+    case 'retry': return { dot: 'bad', short: 'Retrying' + (n ? ' · ' + n : ''), label: 'Could not reach the family journal', text: waiting + 'Trying again automatically' + (remote.detail ? ' (' + remote.detail + ')' : '') + '.' };
+    default: return { dot: 'bad', short: 'Not connected', label: 'Not connected to a family journal', text: 'Enter the family code to connect this device.' };
   }
 }
-function teardownRemote(){
-  remote.unsubs.forEach(u => { try { u(); } catch (e) { /* ignore */ } });
-  remote.unsubs = []; remote.db = null; remote.kind = ''; remote.loaded = false; remote.writable = null; remote.lastPushed = {}; remote.chains = {};
-  clearTimeout(remote.loadTimer);
+
+// ---------- connecting ----------
+async function loadFirebase(){
+  if (remote.M) return;
+  const base = 'https://www.gstatic.com/firebasejs/' + FIREBASE_VERSION + '/';
+  const mods = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
+  const appM = mods[0], authM = mods[1], fsM = mods[2];
+  const app = appM.getApps().length ? appM.getApp() : appM.initializeApp(FIREBASE_CONFIG);
+  let fs; try { fs = fsM.initializeFirestore(app, { experimentalAutoDetectLongPolling: true }); } catch (e) { fs = fsM.getFirestore(app); }
+  remote.auth = authM.getAuth(app); remote.authM = authM; remote.fs = fs; remote.M = fsM;
+}
+async function ensureAuth(){
+  const a = remote.auth;
+  if (!a.currentUser && typeof a.authStateReady === 'function') { try { await a.authStateReady(); } catch (e) { /* ignore */ } }
+  if (!a.currentUser) await remote.authM.signInAnonymously(a);
+}
+function fref(path){ return remote.M.doc(remote.fs, remote.fam + '/' + path); }
+function stopSync(){
+  remote.gen++;
+  remote.unsubs.forEach(u => { try { u(); } catch (e) { /* ignore */ } }); remote.unsubs = [];
+  clearTimeout(remote.flushTimer); remote.flushTimer = null; clearTimeout(remote.loadTimer); clearTimeout(remote.retryTimer);
+  remote.fam = ''; remote.code = ''; remote.loaded = remote.gotMeta = remote.gotDays = false; remote.devices = []; remote.flushing = false;
   setSync('local');
 }
-async function initRemote(){
+async function startSync(){
+  stopSync();
+  const code = familyCode(); if (!FIREBASE_CONFIG || !code) return;
+  const gen = remote.gen;
+  setSync('connecting');
   try {
-    if (await initFirebase()) return;
-    const claude = await getClaude();
-    if (!claude) { setSync('local'); return; }
-    const results = await Promise.all([
-      claude.use('db').catch(() => null),
-      claude.use('downloads').catch(() => null),
-      claude.use('user').catch(() => null)
-    ]);
-    remote.downloads = results[1] || null;
-    remote.user = results[2] || null;
-    if (ui.view === 'grownups') renderView();
-    if (!results[0]) { setSync('local'); return; }
-    remote.db = results[0]; remote.kind = 'claude';
-    try { if (remote.user && typeof remote.user.can === 'function') { const w = await remote.user.can('data.write'); if (w === false) remote.writable = false; } } catch (e) { /* not told */ }
-    setSync('connecting');
-    subscribeRemote();
-  } catch (e) { setSync('local'); }
+    await loadFirebase(); await ensureAuth();
+    if (gen !== remote.gen) return;
+    remote.fam = 'families/' + sha256(code); remote.code = code;
+    subscribe(gen);
+    remote.loadTimer = setTimeout(() => { if (gen === remote.gen && !remote.loaded) setSync(navigator.onLine === false ? 'offline' : 'slow'); }, 12000);
+    scheduleFlush(0);
+  } catch (e) {
+    if (gen !== remote.gen) return;
+    setSync(isOffline(e) ? 'offline' : 'retry', errText(e));
+    remote.retryTimer = setTimeout(() => { if (gen === remote.gen) startSync(); }, 15000);
+  }
 }
-function subscribeRemote(){
-  const db = remote.db;
-  remote.loadTimer = setTimeout(() => { if (!remote.loaded) setSync('unreachable'); }, 10000);
-  try {
-    remote.unsubs.push(db.doc('journal/meta').onSnapshot(snap => { try { onMetaSnap(snap); } catch (e) { /* keep going */ } }, onSubError));
-    remote.unsubs.push(db.collection('days').orderBy('date', 'desc').limit(366).onSnapshot(snap => { try { onDaysSnap(snap); } catch (e) { /* keep going */ } }, onSubError));
-  } catch (e) { setSync('error', e && e.message); }
+function subscribe(gen){
+  const M = remote.M, fam = remote.fam;
+  const onErr = e => {
+    if (gen !== remote.gen) return;
+    setSync(isOffline(e) ? 'offline' : 'retry', errText(e));
+    clearTimeout(remote.retryTimer); remote.retryTimer = setTimeout(() => { if (gen === remote.gen) startSync(); }, 10000);
+  };
+  remote.unsubs.push(M.onSnapshot(fref('journal/meta'), snap => { if (gen === remote.gen) { try { onMetaSnap(snap); } catch (e) { console.warn(e); } } }, onErr));
+  remote.unsubs.push(M.onSnapshot(M.query(M.collection(remote.fs, fam + '/days'), M.orderBy('date', 'desc'), M.limit(400)), snap => { if (gen === remote.gen) { try { onDaysSnap(snap); } catch (e) { console.warn(e); } } }, onErr));
+  remote.unsubs.push(M.onSnapshot(M.collection(remote.fs, fam + '/devices'), snap => { if (gen === remote.gen) { remote.devices = snap.docs.map(d => d.data()).filter(d => d && d.id); refreshSyncViews(); } }, () => { /* the device list is optional */ }));
 }
 function markLoaded(snap){
   if (snap && snap.metadata && snap.metadata.fromCache) return;
-  if (!remote.loaded) { remote.loaded = true; clearTimeout(remote.loadTimer); }
-  if (['readonly', 'full', 'error'].indexOf(remote.status) < 0) setSync(remote.writable === false ? 'readonly' : 'synced');
+  if (!remote.loaded && remote.gotMeta && remote.gotDays) { remote.loaded = true; clearTimeout(remote.loadTimer); pingDevice(true); }
+  if (!remote.loaded) return;
+  if (Object.keys(dirty).length && !remote.flushing) scheduleFlush(pendingKeys().length ? 0 : 2500);
+  if (!remote.flushing) setSync(pendingKeys().length ? 'sending' : 'synced');
 }
-
-// ---------- merging two copies of the journal (entry level, so two devices never overwrite each other) ----------
-function canon(o){ return JSON.stringify(o, (k, v) => (v && typeof v === 'object' && !Array.isArray(v)) ? Object.keys(v).sort().reduce((a, kk) => { a[kk] = v[kk]; return a; }, {}) : v); }
-function mergeDay(local, remote, date){
-  const L = local ? normalizeDay(local, date) : null, R = remote ? normalizeDay(remote, date) : null;
-  if (!L) return R; if (!R) return L;
-  const tomb = {}; [L, R].forEach(side => Object.keys(side.deleted || {}).forEach(id => { tomb[id] = Math.max(tomb[id] || 0, side.deleted[id]); }));
-  const byId = {};
-  [L, R].forEach(side => side.entries.forEach(e => { const ts = e.updatedAt || e.createdAt || 0; if (tomb[e.id] && tomb[e.id] >= ts) return; const cur = byId[e.id]; if (!cur || (cur.updatedAt || cur.createdAt || 0) < ts) byId[e.id] = e; }));
-  const entries = Object.values(byId).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0) || String(a.id).localeCompare(String(b.id)));
-  const cutoff = Date.now() - 45 * 86400000; Object.keys(tomb).forEach(id => { if (tomb[id] < cutoff) delete tomb[id]; });
-  const pickField = (f, at) => { const la = L[at] || L.updatedAt || 0, ra = R[at] || R.updatedAt || 0; return ra > la ? { v: R[f], at: ra } : { v: L[f], at: la }; };
-  const w = pickField('water', 'waterAt'), en = pickField('energy', 'energyAt');
-  return { date, entries, water: w.v, waterAt: w.at, energy: en.v, energyAt: en.at, deleted: tomb, updatedAt: Math.max(L.updatedAt || 0, R.updatedAt || 0) };
-}
-function mergeMeta(local, remote){
-  const L = normalizeMeta(local), R = normalizeMeta(remote);
-  const newer = (R.updatedAt || 0) > (L.updatedAt || 0) ? R : L, older = newer === R ? L : R;
-  const out = normalizeMeta(clone(newer)); const p = out.progress, a = L.progress, b = R.progress;
-  const unionMin = (x, y) => { const o = {}; [x, y].forEach(m => Object.keys(m || {}).forEach(k => { const v = Number(m[k]) || 0; o[k] = o[k] ? Math.min(o[k], v) : v; })); return o; };
-  const union = (x, y) => Object.assign({}, y || {}, x || {});
-  p.lessons = unionMin(a.lessons, b.lessons); p.badges = unionMin(a.badges, b.badges); p.arenaDays = union(a.arenaDays, b.arenaDays); p.cases = union(a.cases, b.cases);
-  if ((b.quizBest || 0) > (a.quizBest || 0)) { p.quizBest = b.quizBest; p.quizBestDate = b.quizBestDate; } else { p.quizBest = a.quizBest; p.quizBestDate = a.quizBestDate; }
-  p.quizRounds = Math.max(a.quizRounds || 0, b.quizRounds || 0);
-  const habits = {}; [older.progress.habits, newer.progress.habits].forEach(hs => Object.keys(hs || {}).forEach(id => { const r = hs[id]; const cur = habits[id]; if (!cur) { habits[id] = clone(r); return; } cur.startDate = cur.startDate < r.startDate ? cur.startDate : r.startDate; cur.days = Object.assign({}, cur.days, r.days); cur.mastered = cur.mastered && r.mastered ? Math.min(cur.mastered, r.mastered) : (cur.mastered || r.mastered || null); cur.stopped = r.stopped; }));
-  p.habits = habits;
-  const ledger = {}; [a.rewards.ledger, b.rewards.ledger].forEach(ls => (ls || []).forEach(x => { ledger[x.id] = x; }));
-  p.rewards = Object.assign({}, newer.progress.rewards, { ledger: Object.values(ledger).sort((x, y) => x.date < y.date ? -1 : x.date > y.date ? 1 : 0).slice(-400) });
-  out.updatedAt = Math.max(L.updatedAt || 0, R.updatedAt || 0);
-  return out;
-}
+function changedLocal(){ bump(); saveLocal(); clearTimeout(changedLocal.t); changedLocal.t = setTimeout(() => { render(); if (ui.sheet && typeof renderSheet === 'function' && ui.sheet.kind === 'sync') renderSheet(); }, 40); }
 function onMetaSnap(snap){
+  remote.gotMeta = true;
+  const theirs = snap.exists() ? snap.data() : null;
+  if (theirs) {
+    const before = canon(normalizeMeta(state.meta)); const m = mergeMeta(state.meta, theirs);
+    if (canon(m) !== before) { state.meta = m; applyErase(); changedLocal(); queueReportPushes(); }
+    if (canon(m) !== canon(normalizeMeta(theirs))) queuePush('meta');
+  } else queuePush('meta');
   markLoaded(snap);
-  if (remote.erasing) return;
-  const data = snap.exists ? snap.data() : null;
-  if (!data) { queuePush('meta'); return; }
-  const merged = mergeMeta(state.meta, clone(data));
-  if (canon(merged) !== canon(normalizeMeta(state.meta))) { state.meta = merged; bump(); saveLocal(); render(); }
-  if (canon(merged) !== canon(normalizeMeta(clone(data)))) queuePush('meta');
+}
+function mergeRemoteDay(doc){
+  const d = doc.data(); const date = /^\d{4}-\d{2}-\d{2}$/.test(doc.id) ? doc.id : d && d.date;
+  if (!d || !date) return { date: null, changed: false };
+  const cur = state.days[date]; const m = mergeDay(cur || null, d, date);
+  let changed = false;
+  if (m && (m.entries.length || m.water || m.energy || cur)) {
+    if (!cur || canon(m) !== canon(normalizeDay(cur, date))) { state.days[date] = m; changed = true; }
+    if (canon(m) !== canon(normalizeDay(d, date))) queuePush(date);
+  }
+  return { date, changed };
 }
 function onDaysSnap(snap){
-  markLoaded(snap);
-  if (remote.erasing) return;
+  remote.gotDays = true;
   let changed = false; const seen = new Set(); let oldest = null;
-  snap.docs.forEach(doc => {
-    if (!doc.exists) return;
-    const d = doc.data(); const date = /^\d{4}-\d{2}-\d{2}$/.test(doc.id) ? doc.id : d.date;
-    if (!date) return;
-    seen.add(date); if (!oldest || date < oldest) oldest = date;
-    const local = state.days[date];
-    const merged = mergeDay(local, d, date);
-    if (!local || canon(merged) !== canon(normalizeDay(local, date))) { state.days[date] = merged; changed = true; }
-    if (canon(merged) !== canon(normalizeDay(clone(d), date))) queuePush(date);
-  });
-  const complete = snap.size < 366;
+  snap.docs.forEach(doc => { const r = mergeRemoteDay(doc); if (!r.date) return; seen.add(r.date); if (!oldest || r.date < oldest) oldest = r.date; if (r.changed) changed = true; });
+  const complete = snap.size < 400;
   Object.keys(state.days).forEach(date => {
-    if (seen.has(date)) return;
-    if (!state.days[date].updatedAt) return;
+    if (seen.has(date)) return; const d = state.days[date];
+    if (!d.entries.length && !d.water && !d.energy) return;
     if (complete || (oldest && date >= oldest)) queuePush(date);
   });
-  if (changed) { bump(); saveLocal(); render(); queueReportPushes(); }
+  if (changed) { changedLocal(); queueReportPushes(); }
+  markLoaded(snap);
 }
-function onSubError(err){
-  clearTimeout(remote.loadTimer);
-  const code = err && err.code;
-  if (code === 'revoked' || code === 'not_granted') { remote.writable = false; setSync('local'); }
-  else setSync('error', err && err.message);
+async function pullRecent(force){
+  if (!remote.fam || !remote.M || !remote.M.getDocsFromServer) return;
+  const now = Date.now(); if (!force && now - remote.lastPull < 20000) return; remote.lastPull = now;
+  const gen = remote.gen, M = remote.M;
+  try {
+    const res = await Promise.all([M.getDocFromServer(fref('journal/meta')), M.getDocsFromServer(M.query(M.collection(remote.fs, remote.fam + '/days'), M.where('date', '>=', addDays(todayStr(), -45))))]);
+    if (gen !== remote.gen) return;
+    if (res[0].exists()) onMetaSnap(res[0]);
+    let changed = false; res[1].docs.forEach(doc => { if (mergeRemoteDay(doc).changed) changed = true; });
+    if (changed) { changedLocal(); queueReportPushes(); }
+    if (remote.loaded && !remote.flushing && !pendingKeys().length) setSync('synced');
+  } catch (e) { if (gen === remote.gen && isOffline(e)) setSync('offline'); }
 }
-function queuePush(key){
-  if (!remote.db || remote.writable === false || remote.erasing) return;
-  clearTimeout(remote.pushTimers[key]);
-  remote.pushTimers[key] = setTimeout(() => pushDoc(key), 600);
-}
-function pushDoc(key){
-  if (!remote.db || remote.writable === false) return;
-  const isReport = key.indexOf('report:') === 0;
-  const path = key === 'meta' ? 'journal/meta' : isReport ? 'reports/' + key.slice(7) : 'days/' + key;
-  let body;
-  try { body = key === 'meta' ? clone(state.meta) : isReport ? weeklyReport(key.slice(7)) : (state.days[key] ? clone(state.days[key]) : null); } catch (e) { body = null; }
-  if (!body) return;
-  if (key !== 'meta' && !isReport) body.date = key;
-  const ser = JSON.stringify(body);
-  if (remote.lastPushed[path] === ser) return;
-  const prev = remote.chains[path] || Promise.resolve();
-  remote.chains[path] = prev.then(async () => {
-    const attempt = async () => { await remote.db.doc(path).set(body); remote.lastPushed[path] = ser; };
-    try {
-      await attempt();
-      if (remote.status === 'error' || remote.status === 'unreachable' || remote.status === 'connecting') setSync('synced');
-    } catch (err) {
-      const code = err && err.code;
-      if (code === 'unavailable') {
-        await sleep(500 + Math.random() * 1000);
-        try { await attempt(); } catch (e2) { setSync('error', e2 && e2.message); }
-      } else if (code === 'invalid_argument') { remote.writable = false; setSync('readonly'); }
-      else if (code === 'quota_exceeded') setSync('full');
-      else if (code === 'revoked' || code === 'not_granted') { remote.writable = false; setSync('local'); }
-      else setSync('error', err && err.message);
-    }
+
+// ---------- sending ----------
+async function pushKey(key, gen){
+  const M = remote.M;
+  if (isReportKey(key)) { const ws = key.slice(7); await M.setDoc(fref('reports/' + ws), plain(weeklyReport(ws))); return; }
+  const isMeta = key === 'meta'; const ref = fref(isMeta ? 'journal/meta' : 'days/' + key);
+  let out = null;
+  await M.runTransaction(remote.fs, async tx => {
+    const snap = await tx.get(ref);
+    const theirs = snap.exists() ? snap.data() : null;
+    out = isMeta ? mergeMeta(state.meta, theirs) : mergeDay(state.days[key] || null, theirs, key);
+    if (!out) return;
+    if (!isMeta) out.date = key;
+    if (theirs && canon(out) === canon(isMeta ? normalizeMeta(theirs) : normalizeDay(theirs, key))) return;
+    tx.set(ref, plain(out));
   });
+  if (gen !== remote.gen || !out) return;
+  if (isMeta) { const m = mergeMeta(state.meta, out); if (canon(m) !== canon(normalizeMeta(state.meta))) { state.meta = m; applyErase(); changedLocal(); } }
+  else { const cur = state.days[key]; const m = mergeDay(cur || null, out, key); if (!cur || canon(m) !== canon(normalizeDay(cur, key))) { if (!m.entries.length && !m.water && !m.energy && !cur) return; state.days[key] = m; changedLocal(); } }
 }
-async function eraseEverything(){
-  const dates = Object.keys(state.days);
-  remote.erasing = true;
+async function flush(){
+  if (!remote.fam || !remote.M) return;
+  if (remote.flushing) { remote.again = true; return; }
+  remote.flushing = true; const gen = remote.gen;
+  const order = k => k === 'meta' ? 0 : isReportKey(k) ? 2 : 1;
+  try {
+    const keys = Object.keys(dirty).sort((a, b) => order(a) - order(b) || (a < b ? -1 : 1));
+    if (pendingKeys().length) setSync('sending');
+    for (const key of keys) {
+      if (gen !== remote.gen) return;
+      if (!(key in dirty)) continue;
+      if (isReportKey(key) && (!remote.loaded || pendingKeys().length)) continue;
+      const tag = dirty[key];
+      await pushKey(key, gen);
+      if (dirty[key] === tag) { delete dirty[key]; saveDirty(); }
+    }
+    remote.retryMs = 0; remote.lastOk = Date.now();
+    try { localStorage.setItem('fe.lastSync', String(remote.lastOk)); } catch (e) { /* ignore */ }
+    if (remote.loaded) setSync(pendingKeys().length ? 'sending' : 'synced');
+  } catch (err) {
+    if (gen !== remote.gen) return;
+    remote.retryMs = Math.min(60000, Math.max(3000, (remote.retryMs || 1500) * 2));
+    setSync(isOffline(err) ? 'offline' : 'retry', errText(err));
+    scheduleFlush(remote.retryMs, true);
+  } finally {
+    if (gen === remote.gen) {
+      remote.flushing = false;
+      if (remote.again) { remote.again = false; scheduleFlush(150); }
+    }
+  }
+  pingDevice(false);
+}
+function latestEntryTs(){ let t = 0; Object.values(state.days).forEach(d => d.entries.forEach(e => { if ((e.createdAt || 0) > t) t = e.createdAt; })); return t; }
+async function pingDevice(force){
+  if (!remote.fam || !remote.loaded) return;
+  const now = Date.now(); if (!force && now - remote.deviceAt < 60000) return; remote.deviceAt = now;
+  const body = { id: deviceId(), name: deviceName(), kind: deviceKind(), app: APP_VERSION, lastSeen: now, lastSync: remote.lastOk || 0, pending: pendingKeys().length, entries: allEntries().length, lastEntry: latestEntryTs(), standalone: !!isStandalone() };
+  try { await remote.M.setDoc(fref('devices/' + deviceId()), body, { merge: true }); } catch (e) { /* not important enough to retry */ }
+}
+function syncDiagnostics(){ return { app: APP_VERSION, status: remote.status, detail: remote.detail, connected: !!remote.fam, loaded: remote.loaded, flushing: remote.flushing, waiting: Object.keys(dirty), lastSync: remote.lastOk, device: deviceName(), online: navigator.onLine }; }
+try { window.foodDetectiveSync = syncDiagnostics; } catch (e) { /* ignore */ }
+function syncNow(){ if (!familyCode()) return; if (!remote.fam) { startSync(); return; } remote.retryMs = 0; scheduleFlush(0); pullRecent(true); pingDevice(true); }
+
+// ---------- joining a family journal ----------
+async function joinFamily(input, create, childName){
+  const code = normalizeCode(input);
+  if (code.length < 4) { ui.join = { code: String(input || ''), msg: 'The family code has at least 4 letters or numbers.' }; renderView(); return; }
+  ui.join = { code, busy: true, msg: 'Looking for the family journal…' }; renderView();
+  try {
+    await loadFirebase(); await ensureAuth();
+    const M = remote.M; const fam = 'families/' + sha256(code);
+    const snap = await M.getDocFromServer(M.doc(remote.fs, fam + '/journal/meta'));
+    if (!snap.exists() && !create) { ui.join = { code, notFound: true, msg: 'No family journal uses the code ' + code + '. Check it with a parent and try again.' }; renderView(); return; }
+    if (snap.exists()) { state.meta = mergeMeta(state.meta, snap.data()); }
+    else {
+      const now = Date.now(); state.meta.settings.name = String(childName || '').trim().slice(0, 30); state.meta.settingsAt = now; state.meta.updatedAt = now;
+      await M.setDoc(M.doc(remote.fs, fam + '/journal/meta'), plain(normalizeMeta(state.meta)));
+    }
+    bump(); saveLocal(); setFamilyCode(code); ui.join = null;
+    Object.keys(state.days).forEach(d => { const day = state.days[d]; if (day.entries.length || day.water || day.energy) queuePush(d); });
+    render(); startSync();
+    toast(snap.exists() ? '✅ Connected to the family journal' : '✅ New family journal started');
+  } catch (e) {
+    ui.join = { code, msg: isOffline(e) ? 'This device is offline. Connect to Wi-Fi or data, then tap Connect.' : 'Could not reach the family journal (' + errText(e) + '). Try again in a moment.' };
+    renderView();
+  }
+}
+function leaveFamily(){ stopSync(); setFamilyCode(''); remote.devices = []; ui.join = null; render(); }
+function eraseEverything(){
+  const E = Date.now(); const dates = Object.keys(state.days);
   state = freshState(true);
-  state.meta.updatedAt = Date.now();
+  state.meta.erasedAt = E; state.meta.updatedAt = E; state.meta.settingsAt = E; state.meta.rewardsAt = E;
   bump(); saveLocal();
   ui.date = todayStr(); ui.lesson = null; ui.arena = null;
+  queuePush('meta'); dates.forEach(d => queuePush(d));
   render();
-  if (remote.db && remote.writable !== false) {
-    for (const d of dates) { try { await remote.db.doc('days/' + d).delete(); } catch (e) { /* best effort */ } }
-    try { await remote.db.doc('journal/meta').set(clone(state.meta)); } catch (e) { /* best effort */ }
-  }
-  remote.lastPushed = {};
-  remote.erasing = false;
 }
-function syncText(){
-  switch (remote.status) {
-    case 'synced': return remote.kind === 'family' ? { dot: 'synced', label: 'Family sync on', text: 'Every device with this family code shares one journal. Entries are saved on this device too.' } : { dot: 'synced', label: 'Cloud sync on', text: 'Entries are saved to the app’s private cloud database and to this device, so they follow this account across devices.' };
-    case 'connecting': return { dot: 'busy', label: 'Connecting to cloud', text: 'Looking for the cloud journal. Entries are always saved on this device first.' };
-    case 'unreachable': return { dot: 'busy', label: 'Cloud not reached yet', text: 'Entries are saved on this device and will sync when the connection returns.' };
-    case 'readonly': return { dot: 'busy', label: 'Cloud is view only here', text: 'This account can read the cloud journal but not change it. New entries stay on this device.' };
-    case 'full': return { dot: 'busy', label: 'Cloud database is full', text: 'Entries are saved on this device. Export a backup from this page.' };
-    case 'error': return { dot: 'busy', label: 'Cloud sync hit a problem', text: 'Entries are saved on this device. ' + (remote.detail || '') };
-    default: return { dot: '', label: 'Saving on this device', text: FIREBASE_CONFIG ? 'Entries are saved in this browser. Enter the family code below to share one journal across devices.' : 'Entries are saved in this browser. Cloud sync turns on when the app is opened by a signed-in Claude account that owns it or can edit it. Keep a backup from time to time.' };
-  }
+
+// ---------- keeping every device current ----------
+function onResume(){
+  const now = Date.now(); if (now - remote.lastResume < 3000) return; remote.lastResume = now;
+  checkForUpdate();
+  if (!familyCode()) return;
+  if (!remote.fam) { startSync(); return; }
+  scheduleFlush(0); pullRecent(false); pingDevice(false);
+}
+function newerVersion(a, b){ const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0); } return false; }
+async function checkForUpdate(){
+  if (location.protocol !== 'https:') return;
+  const now = Date.now(); if (now - remote.updAt < 5 * 60000) return; remote.updAt = now;
+  try {
+    const r = await fetch('version.json?t=' + now, { cache: 'no-store' }); if (!r.ok) return;
+    const v = String((await r.json()).version || '');
+    if (!v || !newerVersion(v, APP_VERSION)) return;
+    let tried = ''; try { tried = sessionStorage.getItem('fe.updTried') || ''; } catch (e) { /* ignore */ }
+    if (tried === v) return;
+    ui.updateReady = v; maybeReloadForUpdate();
+  } catch (e) { /* try again later */ }
+}
+function maybeReloadForUpdate(){
+  if (!ui.updateReady) return;
+  const a = document.activeElement; const typing = a && /INPUT|TEXTAREA|SELECT/.test(a.tagName);
+  if (ui.sheet || typing || ui.lesson || ui.arena) return;
+  try { sessionStorage.setItem('fe.updTried', ui.updateReady); } catch (e) { /* ignore */ }
+  location.replace(location.pathname + '?v=' + encodeURIComponent(ui.updateReady) + '#' + ui.view);
+}
+function installLifecycle(){
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') onResume(); else pingDevice(true); });
+  window.addEventListener('online', () => { remote.lastResume = 0; onResume(); });
+  window.addEventListener('offline', () => { if (familyCode()) setSync('offline'); });
+  window.addEventListener('focus', onResume);
+  window.addEventListener('pageshow', e => { if (e.persisted) { remote.lastResume = 0; onResume(); } });
+  // a second tab of the app on the same device: merge what it saved instead of overwriting it
+  window.addEventListener('storage', e => {
+    try {
+      if (e.key === LS_KEY && e.newValue) {
+        const other = normalizeState(JSON.parse(e.newValue).state); let changed = false;
+        const m = mergeMeta(state.meta, other.meta); if (canon(m) !== canon(normalizeMeta(state.meta))) { state.meta = m; changed = true; }
+        Object.keys(other.days).forEach(date => { const cur = state.days[date]; const md = mergeDay(cur || null, other.days[date], date); if (md && (!cur || canon(md) !== canon(normalizeDay(cur, date)))) { state.days[date] = md; changed = true; } });
+        if (changed) { bump(); render(); }
+      } else if (e.key === DIRTY_KEY && e.newValue) {
+        const other = JSON.parse(e.newValue) || {}; Object.keys(other).forEach(k => { if (!(k in dirty)) dirty[k] = other[k]; });
+      } else if (e.key === 'fe.family' && (e.newValue || '') !== remote.code) { render(); startSync(); }
+    } catch (err) { /* ignore */ }
+  });
+  setInterval(() => { if (document.visibilityState !== 'visible') return; if (familyCode() && Object.keys(dirty).length && !remote.flushing) scheduleFlush(0); pingDevice(false); refreshSyncViews(); }, 30000);
+  setInterval(checkForUpdate, 30 * 60000);
 }
 
 // ---------- ui state and rendering ----------
@@ -1547,17 +1768,20 @@ function render(){ renderTop(); renderTabs(); renderView(); }
 function renderTop(){
   const s = syncText();
   $('#topbar').innerHTML = '<div class="brand">' + ICONS.mark + '<div><div class="brand-name">Food Detective</div><div class="brand-tag">Every bite is a clue</div></div></div>' +
-    '<span class="sync-dot ' + s.dot + '" title="' + esc(s.label) + '" aria-label="' + esc(s.label) + '"></span>' +
+    (needsJoin() ? '' : '<button class="sync-pill" data-action="sync-open" aria-label="' + esc(s.label) + '"><span class="sync-dot ' + s.dot + '"></span><span>' + esc(s.short) + '</span></button>') +
     '<button class="icon-btn" data-action="goto" data-view="grownups" aria-label="Chief\u2019s office">' + ICONS.gear + '</button>';
 }
 function renderTabs(){
+  if (needsJoin()) { $('#tabbar').innerHTML = ''; return; }
   const tabs = [['today', 'Today'], ['week', 'Case files'], ['learn', 'Academy'], ['badges', 'HQ']];
   $('#tabbar').innerHTML = tabs.map(t => '<button class="tab' + (ui.view === t[0] ? ' active' : '') + '" data-action="goto" data-view="' + t[0] + '" aria-current="' + (ui.view === t[0] ? 'page' : 'false') + '">' + ICONS[t[0]] + '<span>' + t[1] + '</span></button>').join('');
 }
 function renderView(){
   const v = $('#view'); const top = v.scrollTop;
   let html = '';
-  if (ui.view === 'today') html = renderToday();
+  document.body.classList.toggle('joining', needsJoin());
+  if (needsJoin()) { v.innerHTML = joinHTML(); v.scrollTop = 0; $('#fab').style.display = 'none'; return; }
+  if (ui.view === 'today') html = syncBannerHTML() + renderToday();
   else if (ui.view === 'week') html = renderWeek();
   else if (ui.view === 'learn') html = ui.lesson ? renderLesson() : (ui.arena ? renderArena() : renderLearn());
   else if (ui.view === 'badges') html = renderBadges();
@@ -1589,7 +1813,7 @@ function renderToday(){
   const date = ui.date, day = getDay(date), t = totals(day), r = refs(), s = state.meta.settings; const show = !!s.showNumbers;
   const isToday = date === todayStr();
   let h = '<div class="daynav"><button class="icon-btn" data-action="day-prev" aria-label="Previous day">‹</button><div class="daynav-mid"><div class="daynav-title">' + esc(niceDate(date)) + '</div>' +
-    (isToday ? '<div class="daynav-sub">' + esc(greeting()) + ', Detective ' + esc(s.name || '') + '!</div>' : '<button class="link" data-action="day-today">Jump to today</button>') +
+    (isToday ? '<div class="daynav-sub">' + esc(greeting()) + ', Detective' + (s.name ? ' ' + esc(s.name) : '') + '!</div>' : '<button class="link" data-action="day-today">Jump to today</button>') +
     '</div><button class="icon-btn" data-action="day-next" aria-label="Next day">›</button></div>';
   h += questsCardHTML(date);
   h += caseCardHTML(date);
@@ -1859,11 +2083,45 @@ function rewardTipsHTML(){
 }
 function familyCardHTML(){
   const sy = syncText(); const code = familyCode();
-  if (!FIREBASE_CONFIG) return '<section class="card"><div class="card-head"><h2>Family sync</h2><span class="small muted">not set up yet</span></div><p class="small" style="margin:0">Family sync lets every device with the same family code share one journal. It turns on once the Firebase config is added to this app file. Until then, entries stay on each device, and backups move them.</p></section>';
-  return '<section class="card"><div class="card-head"><h2>Family sync</h2><span class="status"><span class="sync-dot ' + sy.dot + '"></span>' + esc(sy.label) + '</span></div><p class="small">' + esc(sy.text) + '</p>' +
-    (code ? '<div class="kv"><span>Family code</span><b>' + esc(code) + '</b></div><div class="row" style="margin-top:8px"><button class="btn sm secondary" data-action="family-disconnect">Disconnect this device</button></div>' :
-      '<form id="family-form"><div class="field"><label for="family-code">Family code</label><input id="family-code" class="input" autocomplete="off" autocapitalize="characters" placeholder="for example SOWERS-2026" maxlength="40"></div><button class="btn" type="submit">Connect</button></form>') +
-    '<p class="hint">Use the same code on every one of her devices and yours. Anyone with the code can see and edit the journal, so keep it in the family.</p></section>';
+  let h = '<section class="card" id="family-card"><div class="card-head"><h2>Family journal</h2><span class="status"><span class="sync-dot ' + sy.dot + '"></span>' + esc(sy.short) + '</span></div>' + syncStatusHTML();
+  if (code) {
+    h += '<div class="kv" style="margin-top:10px"><span>Family code</span><b>' + esc(code) + '</b></div>' +
+      '<div class="row" style="margin-top:10px;flex-wrap:wrap;gap:8px"><button class="btn sm" data-action="family-share">Share the family link</button><button class="btn sm secondary" data-action="sync-now">Sync now</button></div>' +
+      (ui.shareText ? '<div class="field" style="margin-top:8px"><label for="share-link">Family link</label><input id="share-link" class="input" readonly value="' + esc(ui.shareText) + '"></div>' : '') +
+      '<p class="hint">Send the family link to every phone, tablet and computer she uses, in both homes. Tapping it connects that device with no typing. A device that is not connected cannot log food, so nothing gets stranded on one device. Anyone with the code or link can see the journal, so keep it in the family.</p>' +
+      (ui.confirmLeave ? '<div class="row" style="gap:8px"><button class="btn sm danger" data-action="family-disconnect-yes">Yes, disconnect</button><button class="btn sm secondary" data-action="family-disconnect-no">Keep connected</button></div>' : '<button class="btn sm secondary" data-action="family-disconnect">Disconnect this device</button>');
+  }
+  return h + '</section>';
+}
+function syncStatusHTML(){
+  const s = syncText();
+  return '<div class="sync-line"><span class="sync-dot ' + s.dot + '"></span><b>' + esc(s.label) + '</b></div><p class="small" style="margin:4px 0 0">' + esc(s.text) + '</p>' + (familyCode() ? devicesHTML() : '');
+}
+function devicesHTML(){
+  const me = deviceId(); const now = Date.now();
+  const list = (remote.devices || []).filter(d => d.id !== me).concat(remote.loaded ? [{ id: me, name: deviceName(), app: APP_VERSION, lastSeen: now, lastSync: remote.lastOk, pending: pendingKeys().length }] : []).sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+  if (!list.length) return '';
+  return '<div class="dev-list"><div class="small muted" style="font-weight:800;margin:12px 0 2px">Devices on this journal</div>' + list.map(d => {
+    const waiting = (d.pending || 0) > 0; const old = d.app && newerVersion(APP_VERSION, d.app); const quiet = now - (d.lastSeen || 0) > 3 * 86400000;
+    const line = (waiting ? '⏳ ' + d.pending + ' waiting to send' : '✅ Synced ' + ago(d.lastSync || d.lastSeen)) + ' · opened ' + ago(d.lastSeen) + (old ? ' · older app version, it updates the next time it opens' : '') + (quiet && !old ? ' · not opened in a few days' : '');
+    return '<div class="dev"><div class="dev-name">' + esc(d.name || d.kind || 'Device') + (d.id === me ? ' <span class="chip on">this device</span>' : '') + '</div><div class="small muted">' + esc(line) + '</div></div>';
+  }).join('') + '</div>' + (list.length === 1 && remote.loaded ? '<p class="hint">Only this device is on this journal so far. Open Food Detective on the other devices and they appear here.</p>' : '');
+}
+function syncBannerHTML(){
+  const n = pendingKeys().length; const st = remote.status;
+  const show = !!familyCode() && n > 0 && (st === 'offline' || st === 'retry' || st === 'slow' || (remote.pendingSince && Date.now() - remote.pendingSince > 120000));
+  if (!show) return '<div id="sync-banner"></div>';
+  return '<div id="sync-banner" class="note sun sync-banner" role="status" data-action="sync-open">\u{1F4E1} ' + n + (n === 1 ? ' change is' : ' changes are') + ' saved on this device and will reach the family journal as soon as the internet is back. Nothing is lost.</div>';
+}
+function joinHTML(){
+  const j = ui.join || {};
+  return '<section class="card join-card"><div class="join-mark">' + ICONS.mark + '</div><h2>Connect to your family journal</h2>' +
+    '<p>Food Detective keeps one journal that every phone and computer in the family shares. Enter your family code once on this device and everything stays in sync.</p>' +
+    '<form id="join-form"><div class="field"><label for="join-code">Family code</label><input id="join-code" class="input join-input" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="FAMILY-CODE" maxlength="40" value="' + esc(j.code || '') + '"' + (j.busy ? ' disabled' : '') + '></div>' +
+    '<button class="btn block" type="submit"' + (j.busy ? ' disabled' : '') + '>' + (j.busy ? 'Connecting…' : 'Connect') + '</button></form>' +
+    (j.msg ? '<p class="note' + (j.notFound ? ' sun' : '') + '" role="status">' + esc(j.msg) + '</p>' : '') +
+    (j.notFound ? '<details class="more"><summary>Starting a brand new family journal?</summary><p class="small">Only do this if your family has never used Food Detective. Everyone else should use the code they already have.</p><form id="create-form"><div class="field"><label for="create-name">Child’s first name</label><input id="create-name" class="input" maxlength="30" autocomplete="off"></div><button class="btn secondary" type="submit">Start a new journal with ' + esc(j.code) + '</button></form></details>' : '') +
+    '<p class="hint">A parent has the code. Tapping the family link a parent shares connects this device automatically. You only do this once on each device.</p></section>';
 }
 function renderGrownups(){
   if (!ui.gate) return '<section class="card gate"><div class="big-em">\u{1F512}</div><h2>Chief\u2019s office</h2><p class="muted">Parents only. Settings, rewards, backups and notes.</p><form id="gate-form"><label for="gate-input" class="small muted" style="font-weight:800">What is 6 × 7?</label><input id="gate-input" class="input" inputmode="numeric" autocomplete="off" aria-label="Answer"><button class="btn" type="submit">Unlock</button></form><p class="hint" id="gate-msg"></p></section>';
@@ -1890,14 +2148,14 @@ function renderGrownups(){
     '<div class="stack"><button class="btn secondary block" data-action="export-json">Save a backup (.json)</button><button class="btn secondary block" data-action="export-csv">Export the journal (.csv)</button>' +
     '<label class="btn secondary block" for="import-file">Restore from a backup<input id="import-file" type="file" accept=".json,application/json" style="display:none"></label></div>' +
     (ui.exportText ? '<div class="field"><label for="export-text">' + (remote.downloads ? 'Copy of the export' : 'Downloads are off in this view, so copy the text below and save it in a file') + '</label><textarea id="export-text" class="input" readonly rows="5">' + esc(ui.exportText) + '</textarea><button class="btn sm secondary" data-action="copy-export">Copy to clipboard</button></div>' : '') +
-    '<details class="more"' + (ui.confirmErase ? ' open' : '') + '><summary>Erase everything</summary><p class="small muted">Removes all journal entries, progress, badges, and settings on this device' + (remote.db ? ' and in the cloud journal' : '') + '. Save a backup first.</p>' + (ui.confirmErase ? '<div class="row"><button class="btn danger" data-action="erase-yes">Yes, erase it all</button><button class="btn secondary" data-action="erase-no">Keep my data</button></div>' : '<button class="btn danger sm" data-action="erase-ask">Erase all data</button>') + '</details></section>' +
+    '<details class="more"' + (ui.confirmErase ? ' open' : '') + '><summary>Erase everything</summary><p class="small muted">Removes all journal entries, progress, badges, and settings on this device' + (remote.fam ? ' and in the family journal on every device' : '') + '. Save a backup first.</p>' + (ui.confirmErase ? '<div class="row"><button class="btn danger" data-action="erase-yes">Yes, erase it all</button><button class="btn secondary" data-action="erase-no">Keep my data</button></div>' : '<button class="btn danger sm" data-action="erase-ask">Erase all data</button>') + '</details></section>' +
     '<section class="card sources"><h2>Where the numbers come from</h2><ul style="padding-left:18px;margin:0">' +
     '<li><a href="https://www.dietaryguidelines.gov/" target="_blank" rel="noopener">Dietary Guidelines for Americans 2020–2025</a>. Typical daily calories by age, sex, and activity. Macronutrient ranges for ages 4 to 18. Added sugars under 10% of calories.</li>' +
     '<li>National Academies Dietary Reference Intakes. Protein RDA 34 g a day for ages 9 to 13. Fiber 26 g a day for girls 9 to 13. Sodium guideline 1,800 mg a day for ages 9 to 13.</li>' +
     '<li><a href="https://www.heart.org/" target="_blank" rel="noopener">American Heart Association</a>. Added sugar under 25 g a day for children.</li>' +
     '<li><a href="https://www.healthychildren.org/" target="_blank" rel="noopener">American Academy of Pediatrics, HealthyChildren.org</a>. No caffeine under age 12, no energy drinks under 18, and a focus on healthy habits rather than weight.</li>' +
     '<li>Starter food values are typical estimates from <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener">USDA FoodData Central</a> and product labels. The package label always wins.</li></ul></section>' +
-    '<p class="hint" style="text-align:center;margin:16px 0">Food Detective · made for ' + esc(s.name) + ' · <button class="link" data-action="gate-lock">Lock the office</button></p>';
+    '<p class="hint" style="text-align:center;margin:16px 0">Food Detective · made for ' + esc(s.name || 'your detective') + ' · <button class="link" data-action="gate-lock">Lock the office</button></p>';
 }
 
 // ---------- camera: barcode scanning and label reading ----------
@@ -2180,7 +2438,14 @@ function openSheet(kind, opts){
   const root = $('#sheet-root'); root.classList.add('open'); root.setAttribute('aria-hidden', 'false');
   setTimeout(() => { const el = ui.sheet && ui.sheet.kind === 'add' ? $('#food-search') : null; if (el) { try { el.focus({ preventScroll: true }); } catch (e) { /* ignore */ } } }, 60);
 }
-function closeSheet(){ stopCamera(); ui.sheet = null; const root = $('#sheet-root'); root.classList.remove('open'); root.setAttribute('aria-hidden', 'true'); root.innerHTML = ''; document.body.classList.remove('sheet-open'); }
+function openSyncSheet(){ ui.sheet = { kind: 'sync' }; renderSheet(); document.body.classList.add('sheet-open'); const root = $('#sheet-root'); root.classList.add('open'); root.setAttribute('aria-hidden', 'false'); }
+function syncSheetHTML(){
+  let name = ''; try { name = localStorage.getItem('fe.deviceName') || ''; } catch (e) { /* ignore */ }
+  return '<div class="scrim" data-action="sheet-close"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Family journal"><div class="sheet-head"><h2>\u{1F4E1} Family journal</h2><button class="icon-btn" data-action="sheet-close" aria-label="Close" style="box-shadow:none;background:var(--surface-2)">\u00d7</button></div><div class="sheet-body"><div id="sync-status">' + syncStatusHTML() + '</div>' +
+    (familyCode() ? '<form id="device-form" style="margin-top:14px"><div class="field"><label for="device-name">Name this device</label><input id="device-name" class="input" maxlength="30" autocomplete="off" placeholder="' + esc(deviceKind()) + '" value="' + esc(name) + '"></div><button class="btn sm secondary" type="submit">Save name</button><p class="hint">A name like Kitchen iPad or Dad\u2019s phone makes the device list easy to read.</p></form>' : '') +
+    '</div><div class="sheet-foot">' + (familyCode() ? '<button class="btn" style="flex:1" data-action="sync-now">Sync now</button>' : '<button class="btn" style="flex:1" data-action="sheet-close">OK</button>') + '</div></div>';
+}
+function closeSheet(){ stopCamera(); ui.sheet = null; setTimeout(maybeReloadForUpdate, 300); const root = $('#sheet-root'); root.classList.remove('open'); root.setAttribute('aria-hidden', 'true'); root.innerHTML = ''; document.body.classList.remove('sheet-open'); }
 function swapSheetHTML(sh){
   const e = sh.entry; const tr = entryTraits(e);
   let h = '<div class="scrim" data-action="sheet-close"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Swap ideas"><div class="sheet-head"><h2>\u{1F575}\uFE0F Detective notes</h2><button class="icon-btn" data-action="sheet-close" aria-label="Close" style="box-shadow:none;background:var(--surface-2)">\u00d7</button></div><div class="sheet-body">' +
@@ -2195,10 +2460,12 @@ function swapSheetHTML(sh){
 function renderSheet(){
   const sh = ui.sheet; if (!sh) return;
   if (sh.kind === 'swap') { $('#sheet-root').innerHTML = swapSheetHTML(sh); return; }
+  if (sh.kind === 'sync') { $('#sheet-root').innerHTML = syncSheetHTML(); return; }
   if (sh.mode === 'scan') { $('#sheet-root').innerHTML = scanSheetHTML(sh); if (!sh.scan) setTimeout(startLiveScan, 50); return; }
   if (sh.mode === 'ocr') { $('#sheet-root').innerHTML = ocrSheetHTML(sh); return; }
   const title = sh.kind === 'edit' ? 'Edit food' : 'Add food';
   let h = '<div class="scrim" data-action="sheet-close"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="' + title + '"><div class="sheet-head"><h2>' + title + '</h2><button class="icon-btn" data-action="sheet-close" aria-label="Close" style="box-shadow:none;background:var(--surface-2)">×</button></div><div class="sheet-body">';
+  if (sh.kind === 'edit') { const e0 = getDay(sh.date).entries.find(x => x.id === sh.id); if (e0 && e0.createdAt) h += '<p class="hint" style="margin:0 0 8px">Logged ' + esc(new Date(e0.createdAt).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })) + (e0.by ? ' on ' + esc(e0.by) : '') + '</p>'; }
   h += '<div class="seg" role="group" aria-label="Meal">' + MEALS.map(m => '<button type="button" class="' + (sh.meal === m.id ? 'on' : '') + '" data-action="sheet-meal" data-meal="' + m.id + '">' + m.icon + ' ' + m.name + '</button>').join('') + '</div>';
   if (sh.kind === 'add' && !sh.picked && !sh.manual) {
     h += '<div class="choice-row"><button type="button" class="btn secondary" data-action="sheet-scan">\u{1F4F7} Scan a barcode</button><button type="button" class="btn secondary" data-action="sheet-ocr">\u{1F3F7}\uFE0F Snap the label</button></div>' +
@@ -2312,7 +2579,7 @@ function saveSheet(){
     Object.assign(e, { meal: sh.meal, name: d.name, serving: d.serving, qty: d.qty, per: normPer(d.per), groups: d.groups || [], level: d.level || null, note: d.note || '', icon: d.icon || '\u{1F37D}️', updatedAt: Date.now() });
     toast('Saved');
   } else {
-    day.entries.push({ id: uid(), meal: sh.meal, name: d.name, serving: d.serving, qty: d.qty, per: normPer(d.per), groups: d.groups || [], level: d.level || null, note: d.note || '', icon: d.icon || '\u{1F37D}️', createdAt: Date.now(), updatedAt: Date.now(), src: ['list','scan','ocr'].indexOf(d.src) >= 0 ? d.src : 'label' });
+    day.entries.push({ id: uid(), meal: sh.meal, name: d.name, serving: d.serving, qty: d.qty, per: normPer(d.per), groups: d.groups || [], level: d.level || null, note: d.note || '', icon: d.icon || '\u{1F37D}️', createdAt: Date.now(), updatedAt: Date.now(), src: ['list','scan','ocr'].indexOf(d.src) >= 0 ? d.src : 'label', dev: deviceId(), by: deviceName() });
     toast((MEALS.find(m => m.id === sh.meal) || MEALS[3]).icon + ' Logged in ' + (MEALS.find(m => m.id === sh.meal) || MEALS[3]).name);
   }
   const date = sh.date;
@@ -2389,7 +2656,12 @@ const ACTIONS = {
   'scan-use': () => useScannedProduct(),
   'scan-to-ocr': () => { stopCamera(); ui.sheet.mode = 'ocr'; ui.sheet.scan = null; ui.sheet.ocr = null; renderSheet(); },
   'scan-to-manual': () => { stopCamera(); ui.sheet.mode = null; ui.sheet.scan = null; ui.sheet.ocr = null; ui.sheet.manual = true; ui.sheet.draft = blankDraft(); renderSheet(); setTimeout(() => { const el = $('#f-name'); if (el) { try { el.focus({ preventScroll: true }); } catch (e) { /* ignore */ } } }, 60); },
-  'family-disconnect': () => { setFamilyCode(''); teardownRemote(); renderView(); toast('Disconnected. Entries stay on this device.'); },
+  'family-disconnect': () => { ui.confirmLeave = true; refreshSyncViews(); },
+  'family-disconnect-no': () => { ui.confirmLeave = false; refreshSyncViews(); },
+  'family-disconnect-yes': () => { ui.confirmLeave = false; leaveFamily(); toast('This device is disconnected'); },
+  'family-share': () => { shareJoinLink(); },
+  'sync-open': () => { openSyncSheet(); syncNow(); },
+  'sync-now': () => { syncNow(); toast('Syncing with the family journal\u2026'); },
   'toggle-group': el => { readDraftFromForm(); const d = ui.sheet.draft; const g = el.dataset.g; d.groups = d.groups || []; const i = d.groups.indexOf(g); if (i >= 0) d.groups.splice(i, 1); else d.groups.push(g); el.classList.toggle('on', i < 0); el.setAttribute('aria-pressed', String(i < 0)); },
   'set-level': el => { readDraftFromForm(); const d = ui.sheet.draft; const k = parseInt(el.dataset.k, 10); d.level = d.level === k ? null : k; renderSheet(); },
   'entry-delete': () => { ui.sheet.confirmDelete = true; readDraftFromForm(); renderSheet(); },
@@ -2410,9 +2682,9 @@ const ACTIONS = {
   'arena-answer': el => { const a = ui.arena; a.picked = parseInt(el.dataset.k, 10); if (a.picked === a.qs[a.i].a) a.score++; renderView(); },
   'arena-next': () => { const a = ui.arena; const before = snapshotGame(); a.i++; a.picked = null; if (a.i >= a.qs.length) { state.meta.progress.arenaDays[todayStr()] = true; } ui.scrollReset = true; renderView(); afterChange(before); },
   'arena-close': () => { ui.arena = null; setView('learn'); },
-  'habit-pick': el => { const id = el.dataset.id; if (!habitDef(id) || activeHabits().length >= 2) return; const before = snapshotGame(); const recs = state.meta.progress.habits; const old = recs[id]; recs[id] = { startDate: todayStr(), days: old && old.days ? old.days : {}, mastered: null, stopped: null }; ui.pickOpen = true; touchMeta(); renderView(); toast(habitDef(id).em + ' New habit started. Day 1 is today!'); afterChange(before); },
-  'habit-stop': el => { const rec = state.meta.progress.habits[el.dataset.id]; if (!rec) return; rec.stopped = Date.now(); touchMeta(); renderView(); toast('Habit paused. Your days are saved.'); },
-  'habit-check': el => { const id = el.dataset.id; const hd = habitDef(id); const rec = state.meta.progress.habits[id]; if (!hd || hd.auto || !rec) return; const date = ui.view === 'today' ? ui.date : todayStr(); if (date > todayStr()) { toast('That day has not happened yet'); return; } const before = snapshotGame(); if (rec.days[date]) delete rec.days[date]; else rec.days[date] = true; touchMeta(); renderView(); checkHabits(); afterChange(before); },
+  'habit-pick': el => { const id = el.dataset.id; if (!habitDef(id) || activeHabits().length >= 2) return; const before = snapshotGame(); const recs = state.meta.progress.habits; const old = recs[id]; recs[id] = { startDate: todayStr(), days: old && old.days ? old.days : {}, mastered: null, stopped: null, at: Date.now() }; ui.pickOpen = true; touchMeta(); renderView(); toast(habitDef(id).em + ' New habit started. Day 1 is today!'); afterChange(before); },
+  'habit-stop': el => { const rec = state.meta.progress.habits[el.dataset.id]; if (!rec) return; rec.stopped = Date.now(); rec.at = Date.now(); touchMeta(); renderView(); toast('Habit paused. Your days are saved.'); },
+  'habit-check': el => { const id = el.dataset.id; const hd = habitDef(id); const rec = state.meta.progress.habits[id]; if (!hd || hd.auto || !rec) return; const date = ui.view === 'today' ? ui.date : todayStr(); if (date > todayStr()) { toast('That day has not happened yet'); return; } const before = snapshotGame(); if (rec.days[date]) delete rec.days[date]; else rec.days[date] = true; rec.at = Date.now(); touchMeta(); renderView(); checkHabits(); afterChange(before); },
   'case-pick': el => { const date = ui.date; if (state.meta.progress.cases[date]) return; const c = caseFor(date); const before = snapshotGame(); state.meta.progress.cases[date] = { pick: el.dataset.id, correct: el.dataset.id === c.answer }; touchMeta(); renderView(); afterChange(before); },
   'reward-given': el => { const kind = el.dataset.kind, key = el.dataset.key; const g = goalStatus(kind, key); if (!g.reached || g.given) return; state.meta.progress.rewards.ledger.push({ id: uid(), date: todayStr(), kind, key, label: g.label || (kind + ' reward'), stars: 0 }); touchMeta(); renderView(); toast('Marked as given'); },
   'gate-lock': () => { ui.gate = false; try { sessionStorage.removeItem('fe.gate'); } catch (e) { /* ignore */ } setView('today'); },
@@ -2432,12 +2704,9 @@ function bindEvents(){
   });
   document.addEventListener('submit', e => {
     if (e.target.id === 'food-form') { e.preventDefault(); saveSheet(); }
-    else if (e.target.id === 'family-form') {
-      e.preventDefault();
-      const code = normalizeCode($('#family-code').value);
-      if (code.length < 4) { toast('Make the family code at least 4 characters'); return; }
-      setFamilyCode(code); teardownRemote(); renderView(); toast('Connecting to the family journal\u2026'); initRemote();
-    }
+    else if (e.target.id === 'join-form') { e.preventDefault(); joinFamily($('#join-code').value); }
+    else if (e.target.id === 'create-form') { e.preventDefault(); const nm = ($('#create-name').value || '').trim(); if (!nm) { toast('Add your child\u2019s first name'); $('#create-name').focus(); return; } joinFamily((ui.join && ui.join.code) || '', true, nm); }
+    else if (e.target.id === 'device-form') { e.preventDefault(); setDeviceName(($('#device-name').value || '').trim()); remote.deviceAt = 0; pingDevice(true); refreshSyncViews(); toast('Device name saved'); }
     else if (e.target.id === 'bonus-form') {
       e.preventDefault();
       const reason = ($('#bonus-reason').value || '').trim(); const n = Math.max(1, Math.min(10, parseInt($('#bonus-stars').value, 10) || 0));
@@ -2470,15 +2739,15 @@ function bindEvents(){
       const rw = state.meta.progress.rewards; const k = t.dataset.reward;
       if (k === 'weeklyGoal' || k === 'monthlyGoal') rw[k] = Math.max(1, Math.min(k === 'weeklyGoal' ? 999 : 9999, parseInt(t.value, 10) || rw[k]));
       else rw[k] = t.value.trim().slice(0, 80);
-      touchMeta(); renderView();
+      state.meta.rewardsAt = Date.now(); touchMeta(); renderView();
     } else if (t.dataset && t.dataset.setting) {
       const s = state.meta.settings; const k = t.dataset.setting;
       if (t.type === 'checkbox') s[k] = !!t.checked;
-      else if (k === 'name') s.name = t.value.trim().slice(0, 30) || 'Detective';
+      else if (k === 'name') s.name = t.value.trim().slice(0, 30);
       else if (k === 'age') s.age = parseInt(t.value, 10);
       else if (k === 'activity') s.activity = t.value;
       else s[k] = t.value === '' ? null : Math.max(0, num(t.value)) || null;
-      touchMeta(); renderTop(); if (k !== 'name') renderView();
+      state.meta.settingsAt = Date.now(); touchMeta(); renderTop(); if (k !== 'name') renderView();
     } else if (t.id === 'scan-file' && t.files && t.files[0]) {
       const f = t.files[0]; t.value = ''; decodeBarcodeFile(f).catch(() => setScanStatus('Could not read that photo. Try again or type it in.'));
     } else if ((t.id === 'ocr-file' || t.id === 'ocr-file2') && t.files && t.files[0]) {
@@ -2487,20 +2756,37 @@ function bindEvents(){
       const reader = new FileReader(); reader.onload = () => importBackup(String(reader.result || '')); reader.readAsText(t.files[0]); t.value = '';
     }
   });
-  window.addEventListener('hashchange', () => { const v = location.hash.replace('#', ''); if (VIEWS.indexOf(v) >= 0 && v !== ui.view) { ui.view = v; ui.scrollReset = true; render(); } });
+  window.addEventListener('hashchange', () => { if (handleJoinHash()) return; const v = location.hash.replace('#', ''); if (VIEWS.indexOf(v) >= 0 && v !== ui.view) { ui.view = v; ui.scrollReset = true; render(); } });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.sheet) closeSheet(); });
 }
 
 // ---------- start ----------
+async function shareJoinLink(){
+  const url = joinLink(); const text = 'Tap this link to connect this device to our Food Detective family journal.';
+  if (navigator.share) { try { await navigator.share({ title: 'Food Detective family link', text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(url); toast('Family link copied. Paste it into a text to each device.'); return; } catch (e) { /* show it instead */ }
+  ui.shareText = url; refreshSyncViews();
+}
+function handleJoinHash(){
+  const m = /join=([^&]+)/.exec(location.hash); if (!m) return false;
+  let code = ''; try { code = decodeURIComponent(m[1]); } catch (e) { code = m[1]; }
+  try { history.replaceState(null, '', location.pathname + location.search + '#today'); } catch (e) { /* ignore */ }
+  ui.view = 'today';
+  if (normalizeCode(code) && normalizeCode(code) !== familyCode()) joinFamily(code); else { render(); if (!remote.fam) startSync(); }
+  return true;
+}
 function init(){
   if (!loadLocal()) { state = freshState(false); saveLocal(); }
+  migrateFamilyCode();
   try { if (sessionStorage.getItem('fe.gate') === '1') ui.gate = true; } catch (e) { /* ignore */ }
   const v = location.hash.replace('#', ''); if (VIEWS.indexOf(v) >= 0) ui.view = v;
   ui.date = todayStr();
   render();
   bindEvents();
+  installLifecycle();
   checkBadges();
-  initRemote();
+  if (!handleJoinHash()) startSync();
+  setTimeout(checkForUpdate, 4000);
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
