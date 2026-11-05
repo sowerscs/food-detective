@@ -89,6 +89,58 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .join-mark svg{width:64px;height:64px}
 .join-input{text-align:center;font-size:22px;letter-spacing:2px;font-weight:800;text-transform:uppercase}
 body.joining .tabbar{display:none}
+:root{--viz-energy:#2F8FD6;--viz-protein:#D4598F;--viz-carb:#8470C9;--viz-fat:#C28B1C;--viz-grid:#E3EBF3;--viz-off:#EEF3F8;--viz-ref:#7D8CA3}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--viz-energy:#7CC4F0;--viz-protein:#D65A92;--viz-carb:#8676E0;--viz-fat:#B8861F;--viz-grid:#2E4060;--viz-off:#26385A;--viz-ref:#9FB0C8}}
+.viz{margin:14px 0 4px}
+.viz figcaption{display:flex;flex-direction:column;gap:1px;margin-bottom:6px}
+.viz figcaption b{font-size:15px}
+.viz figcaption span{font-size:12px;color:var(--muted)}
+.viz svg{width:100%;height:auto;display:block;overflow:visible}
+.viz-grid{stroke:var(--viz-grid);stroke-width:1}
+.viz-axis{stroke:var(--viz-ref);stroke-width:1;opacity:.5}
+.viz-ref{stroke:var(--viz-ref);stroke-width:1.5}
+.viz-ref-label{fill:var(--muted);font-size:11px;font-weight:700}
+.viz-tick{fill:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+.viz-hit{fill:transparent}
+.viz-mark:hover path{opacity:.8}
+.viz-off{fill:var(--viz-off)}
+.viz-seg{display:flex;gap:2px;height:28px;border-radius:4px;overflow:hidden}
+.viz-seg span{display:flex;align-items:center;padding-left:8px;font-size:12px;font-weight:800;border-radius:4px;min-width:0;white-space:nowrap}
+.viz-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px;font-size:12px;color:var(--muted);font-weight:700}
+.viz-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.rep-tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (min-width:560px){.rep-tiles{grid-template-columns:repeat(4,1fr)}}
+.rep-tile{background:var(--surface-2);border-radius:14px;padding:10px 12px;min-width:0}
+.rep-tile-l{font-size:12px;color:var(--muted);font-weight:800}
+.rep-tile-v{font-size:19px;font-weight:800;margin-top:2px}
+.rep-tile-s{font-size:11px;color:var(--muted);margin-top:1px}
+.rep-pair{display:grid;grid-template-columns:1fr;gap:4px}
+@media (min-width:560px){.rep-pair{grid-template-columns:1fr 1fr;gap:16px}}
+.rep{background:var(--surface);border-radius:20px;padding:18px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.rep-kicker{font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.rep-head h2{font-size:24px;margin:2px 0}
+.rep-meta{font-size:13px;color:var(--muted);margin-bottom:10px}
+.rep-h3{font-size:17px;margin:20px 0 8px}
+.rep-day{margin:0 0 14px}
+.rep-day-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.rep-day-head span{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.rep-table{width:100%;border-collapse:collapse;font-size:12px}
+.rep-table th{text-align:left;color:var(--muted);font-weight:800;padding:5px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
+.rep-table td{padding:5px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.rep-table .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rep-foot{margin-top:16px;font-size:11px;color:var(--muted)}
+.rep .rep-table{display:block;overflow-x:auto}
+@media print{
+  :root{--bg:#fff;--surface:#fff;--surface-2:#F1F6FB;--ink:#1F2A44;--muted:#56657C;--line:#D6E0EA;--viz-energy:#2F8FD6;--viz-protein:#D4598F;--viz-carb:#8470C9;--viz-fat:#C28B1C;--viz-grid:#E3EBF3;--viz-off:#EEF3F8;--viz-ref:#7D8CA3}
+  html,body,.app,.view-wrap,.view{height:auto!important;overflow:visible!important;display:block!important;background:#fff!important}
+  .topbar,.tabbar,#fab,#toast,#confetti,#sheet-root,.no-print,#sync-banner{display:none!important}
+  .view{padding:0!important}
+  .rep{box-shadow:none;border-radius:0;padding:0;margin:0}
+  .rep .rep-table{display:table;overflow:visible}
+  .viz,.rep-tiles,.rep-day-head{break-inside:avoid}
+  .rep-table tr{break-inside:avoid}
+  @page{margin:12mm}
+}
 .icon-btn{width:44px;height:44px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);font-size:24px;line-height:1;flex:0 0 auto}
 .icon-btn svg{width:22px;height:22px}
 .view-wrap{position:relative;flex:1 1 auto;min-height:0;display:flex}
@@ -1301,7 +1353,7 @@ function queueReportPushes(){ const ws = weekStart(todayStr()); queuePush('repor
 // 3. Merges give the same answer on every device (ties broken the same way), so devices always converge.
 // 4. Anything that fails is retried on a timer, when the app comes back to the screen, and when the internet returns.
 // 5. Each device reports itself (name, last sync, waiting changes, app version) so a parent can see them all.
-const APP_VERSION = '4.0.0';
+const APP_VERSION = '4.1.0';
 const FIREBASE_CONFIG = { apiKey: "AIzaSyAll5XE3Afsy4a3qvKTsCQr1q3p9QovLe4", authDomain: "food-explorer-7f778.firebaseapp.com", projectId: "food-explorer-7f778", storageBucket: "food-explorer-7f778.firebasestorage.app", messagingSenderId: "546707480929", appId: "1:546707480929:web:f5e02ee46d540b33832520" };
 const FIREBASE_VERSION = '10.14.1';
 const remote = { M: null, authM: null, fs: null, auth: null, fam: '', status: 'local', detail: '', loaded: false, gotMeta: false, gotDays: false, unsubs: [], flushing: false, again: false, flushTimer: null, loadTimer: null, retryTimer: null, retryMs: 0, lastOk: 0, lastPull: 0, lastResume: 0, devices: [], deviceAt: 0, gen: 0, pendingSince: 0, updAt: 0, downloads: null };
@@ -1754,7 +1806,7 @@ function installLifecycle(){
 }
 
 // ---------- ui state and rendering ----------
-const VIEWS = ['today', 'week', 'learn', 'badges', 'grownups'];
+const VIEWS = ['today', 'week', 'learn', 'badges', 'grownups', 'report'];
 const ui = { view: 'today', date: todayStr(), lesson: null, arena: null, sort: null, sugar: null, nfTip: null, gate: false, sheet: null, confirmErase: false, exportText: '' };
 const ICONS = {
   today: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>',
@@ -1785,6 +1837,7 @@ function renderView(){
   else if (ui.view === 'week') html = renderWeek();
   else if (ui.view === 'learn') html = ui.lesson ? renderLesson() : (ui.arena ? renderArena() : renderLearn());
   else if (ui.view === 'badges') html = renderBadges();
+  else if (ui.view === 'report') html = renderReport();
   else html = renderGrownups();
   v.innerHTML = html;
   v.scrollTop = ui.scrollReset ? 0 : top;
@@ -2127,7 +2180,7 @@ function renderGrownups(){
   if (!ui.gate) return '<section class="card gate"><div class="big-em">\u{1F512}</div><h2>Chief\u2019s office</h2><p class="muted">Parents only. Settings, rewards, backups and notes.</p><form id="gate-form"><label for="gate-input" class="small muted" style="font-weight:800">What is 6 × 7?</label><input id="gate-input" class="input" inputmode="numeric" autocomplete="off" aria-label="Answer"><button class="btn" type="submit">Unlock</button></form><p class="hint" id="gate-msg"></p></section>';
   const s = state.meta.settings; const r = refs(); const sy = syncText();
   const days = Object.keys(state.days).filter(d => state.days[d].entries.length).length;
-  return '<h2 style="font-size:22px;margin:10px 0 4px">Chief\u2019s office</h2>' +
+  return '<h2 style="font-size:22px;margin:10px 0 4px">Chief\u2019s office</h2>' + dashboardCardHTML() +
     '<section class="card settings"><h2>The detective</h2><div class="field"><label for="s-name">Name shown in the app</label><input id="s-name" class="input" data-setting="name" value="' + esc(s.name) + '" maxlength="30"></div>' +
     '<div class="grid2"><div class="field"><label for="s-age">Age</label><select id="s-age" class="input" data-setting="age">' + [9,10,11,12,13].map(a => '<option value="' + a + '"' + (s.age === a ? ' selected' : '') + '>' + a + '</option>').join('') + '</select></div>' +
     '<div class="field"><label for="s-act">Activity</label><select id="s-act" class="input" data-setting="activity">' + ACTIVITIES.map(a => '<option value="' + a.id + '"' + (s.activity === a.id ? ' selected' : '') + '>' + a.name + '</option>').join('') + '</select></div></div>' +
@@ -2403,6 +2456,341 @@ function ocrSheetHTML(sh){
   }
   return h + '</div></div>';
 }
+// ---------- reports for a nutritionist or doctor, and the parent dashboard ----------
+// Charts are plain SVG with native tooltips (each mark carries a <title>), thin marks, hairline grid,
+// and colors from the --viz-* tokens, which have separately validated light and dark steps.
+const REPORT_MEALS = ['breakfast', 'lunch', 'dinner', 'snack'];
+const SRC_NAMES = { label: 'Typed from label', list: 'Food list', seed: 'Food list', scan: 'Barcode scan', ocr: 'Label photo' };
+function rangeDates(start, end){ const out = []; for (let d = start; d <= end && out.length < 370; d = addDays(d, 1)) out.push(d); return out; }
+function presetRange(id){
+  const end = todayStr();
+  if (id === '14') return { start: addDays(end, -13), end };
+  if (id === '30') return { start: addDays(end, -29), end };
+  if (id === 'month') return { start: end.slice(0, 8) + '01', end };
+  if (id === 'all') { const ds = Object.keys(state.days).filter(d => state.days[d].entries.length).sort(); return { start: ds[0] || end, end }; }
+  return { start: addDays(end, -6), end };
+}
+function shortDate(s){ const d = parseDate(s); return (d.getMonth() + 1) + '/' + d.getDate(); }
+function longDate(s){ return parseDate(s).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); }
+function rangeText(a, b){ const o = { month: 'short', day: 'numeric', year: 'numeric' }; return parseDate(a).toLocaleDateString([], o) + ' to ' + parseDate(b).toLocaleDateString([], o); }
+function fmtInt(n){ return Math.round(n || 0).toLocaleString(); }
+function fmt1(n){ return (Math.round((n || 0) * 10) / 10).toLocaleString(); }
+
+function reportData(start, end){
+  if (end < start) { const t = start; start = end; end = t; }
+  const r = refs(); const s = state.meta.settings;
+  const days = rangeDates(start, end).map(date => {
+    const d = getDay(date); const t = totals(d); const g = groupsOf(d); const meals = {};
+    REPORT_MEALS.forEach(m => { meals[m] = d.entries.filter(e => e.meal === m); });
+    return { date, entries: d.entries, t, groups: g, meals, n: d.entries.length, water: d.water || 0, energy: d.energy || null };
+  });
+  const logged = days.filter(x => x.n);
+  const avg = k => logged.length ? logged.reduce((a, x) => a + (x.t[k] || 0), 0) / logged.length : 0;
+  const a = { kcal: avg('kcal'), p: avg('p'), c: avg('c'), f: avg('f'), fiber: avg('fiber'), added: avg('added'), sugar: avg('sugar'), sodium: avg('sodium') };
+  const eP = a.p * 4, eC = a.c * 4, eF = a.f * 9, eT = eP + eC + eF;
+  const mealDays = {}; REPORT_MEALS.forEach(m => { mealDays[m] = logged.filter(x => x.meals[m].length).length; });
+  const groupDays = {}; GROUPS.forEach(g => { groupDays[g.id] = logged.filter(x => x.groups.has(g.id)).length; });
+  const foods = {}; const levels = { 1: 0, 2: 0, 3: 0 }; let entriesN = 0;
+  logged.forEach(x => x.entries.forEach(e => {
+    entriesN++; const k = e.name.trim().toLowerCase(); const et = entryTotals(e);
+    if (!foods[k]) foods[k] = { name: e.name.trim(), count: 0, kcal: 0, groups: new Set() };
+    foods[k].count++; foods[k].kcal += et.kcal; (e.groups || []).forEach(gid => foods[k].groups.add(gid));
+    if (e.level) levels[e.level]++;
+  }));
+  const topFoods = Object.values(foods).sort((x, y) => y.count - x.count || y.kcal - x.kcal).slice(0, 12);
+  const waterDays = logged.length ? logged.reduce((acc, x) => acc + x.water, 0) / logged.length : 0;
+  const energyDays = days.filter(x => x.energy);
+  return { start, end, days, logged, r, s, avg: a, share: eT ? { p: eP / eT, c: eC / eT, f: eF / eT } : { p: 0, c: 0, f: 0 }, mealDays, groupDays, topFoods, levels, entriesN, waterAvg: waterDays, energyAvg: energyDays.length ? energyDays.reduce((acc, x) => acc + x.energy, 0) / energyDays.length : null };
+}
+
+// ---------- chart builders ----------
+function niceStep(max, ticks){ const raw = max / ticks; const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const n = raw / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
+function vizColumns(o){
+  // o: { title, sub, items: [{ label, v, tip }], ref, refLabel, color, unit, height }
+  const items = o.items; const n = Math.max(1, items.length);
+  const W = 640, H = o.height || 220, L = 46, R = 14, T = 16, B = 30;
+  const top = Math.max(1, o.ref || 0, ...items.map(x => x.v || 0));
+  const step = niceStep(top * 1.08, 4); const max = Math.ceil(top * 1.08 / step) * step;
+  const y = v => T + (H - T - B) * (1 - v / max); const slot = (W - L - R) / n; const bw = Math.min(24, Math.max(4, slot * 0.62));
+  let g = '';
+  for (let v = 0; v <= max + 1e-9; v += step) g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" class="viz-grid"/><text x="' + (L - 6) + '" y="' + (y(v) + 4).toFixed(1) + '" class="viz-tick" text-anchor="end">' + (max >= 10000 ? Math.round(v / 1000) + 'K' : v.toLocaleString()) + '</text>';
+  const every = n <= 8 ? 1 : n <= 16 ? 2 : n <= 31 ? 5 : 10;
+  items.forEach((it, i) => {
+    const cx = L + slot * i + slot / 2; const x = cx - bw / 2; const yv = y(it.v || 0); const y0 = y(0); const h = y0 - yv; const rad = Math.min(4, h, bw / 2);
+    const path = h <= 0 ? '' : 'M' + x.toFixed(1) + ',' + y0.toFixed(1) + 'V' + (yv + rad).toFixed(1) + 'Q' + x.toFixed(1) + ',' + yv.toFixed(1) + ' ' + (x + rad).toFixed(1) + ',' + yv.toFixed(1) + 'H' + (x + bw - rad).toFixed(1) + 'Q' + (x + bw).toFixed(1) + ',' + yv.toFixed(1) + ' ' + (x + bw).toFixed(1) + ',' + (yv + rad).toFixed(1) + 'V' + y0.toFixed(1) + 'Z';
+    g += '<g class="viz-mark"><title>' + esc(it.tip || (it.label + ', ' + fmtInt(it.v) + (o.unit ? ' ' + o.unit : ''))) + '</title><rect x="' + (L + slot * i).toFixed(1) + '" y="' + T + '" width="' + slot.toFixed(1) + '" height="' + (H - T - B) + '" class="viz-hit"/>' + (path ? '<path d="' + path + '" style="fill:' + o.color + '"/>' : '') + '</g>';
+    if (i % every === 0 || i === n - 1 && n <= 16) g += '<text x="' + cx.toFixed(1) + '" y="' + (H - 10) + '" class="viz-tick" text-anchor="middle">' + esc(it.label) + '</text>';
+  });
+  g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(0).toFixed(1) + '" y2="' + y(0).toFixed(1) + '" class="viz-axis"/>';
+  if (o.ref) g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(o.ref).toFixed(1) + '" y2="' + y(o.ref).toFixed(1) + '" class="viz-ref"/><text x="' + (W - R) + '" y="' + (y(o.ref) - 5).toFixed(1) + '" class="viz-ref-label" text-anchor="end">' + esc(o.refLabel || '') + '</text>';
+  return '<figure class="viz"><figcaption><b>' + esc(o.title) + '</b>' + (o.sub ? '<span>' + esc(o.sub) + '</span>' : '') + '</figcaption><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(o.title) + '">' + g + '</svg></figure>';
+}
+function vizSegments(title, sub, parts){
+  const tot = parts.reduce((x, p) => x + p.v, 0) || 1;
+  const label = parts.map(p => p.name + ' ' + Math.round(p.v / tot * 100) + '%').join(', ');
+  return '<figure class="viz"><figcaption><b>' + esc(title) + '</b>' + (sub ? '<span>' + esc(sub) + '</span>' : '') + '</figcaption><div class="viz-seg" role="img" aria-label="' + esc(label) + '">' +
+    parts.filter(p => p.v > 0).map(p => { const pct = Math.round(p.v / tot * 100); return '<span style="flex:' + p.v + ';background:' + p.color + ';color:' + (p.dark ? '#1F2A44' : '#fff') + '" title="' + esc(p.name + ' ' + pct + '%') + '">' + (pct >= 12 ? pct + '%' : '') + '</span>'; }).join('') +
+    '</div><div class="viz-legend">' + parts.map(p => '<span><i style="background:' + p.color + '"></i>' + esc(p.name) + '</span>').join('') + '</div></figure>';
+}
+function vizGrid(title, sub, rows, dates, color){
+  // rows: [{ label, on: date => bool, tip: date => string }]
+  const n = dates.length; const W = 640, L = 86, R = 8, T = 8, rowH = 22, B = 22; const H = T + rows.length * rowH + B;
+  const slot = (W - L - R) / n; const cell = Math.max(4, Math.min(16, slot - 3));
+  let g = '';
+  rows.forEach((row, ri) => {
+    const cy = T + ri * rowH + rowH / 2;
+    g += '<text x="' + (L - 8) + '" y="' + (cy + 4) + '" class="viz-tick" text-anchor="end">' + esc(row.label) + '</text>';
+    dates.forEach((d, i) => { const x = L + slot * i + (slot - cell) / 2; const on = row.on(d); g += '<rect x="' + x.toFixed(1) + '" y="' + (cy - cell / 2).toFixed(1) + '" width="' + cell.toFixed(1) + '" height="' + cell.toFixed(1) + '" rx="3" class="' + (on ? 'viz-on' : 'viz-off') + '"' + (on ? ' style="fill:' + color + '"' : '') + '><title>' + esc(row.tip ? row.tip(d) : row.label + (on ? ' logged ' : ' not logged ') + shortDate(d)) + '</title></rect>'; });
+  });
+  const every = n <= 8 ? 1 : n <= 16 ? 2 : n <= 31 ? 5 : 10;
+  dates.forEach((d, i) => { if (i % every === 0) g += '<text x="' + (L + slot * i + slot / 2).toFixed(1) + '" y="' + (H - 6) + '" class="viz-tick" text-anchor="middle">' + shortDate(d) + '</text>'; });
+  return '<figure class="viz"><figcaption><b>' + esc(title) + '</b>' + (sub ? '<span>' + esc(sub) + '</span>' : '') + '</figcaption><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(title) + '">' + g + '</svg></figure>';
+}
+function statTile(label, value, sub){ return '<div class="rep-tile"><div class="rep-tile-l">' + esc(label) + '</div><div class="rep-tile-v">' + esc(value) + '</div>' + (sub ? '<div class="rep-tile-s">' + esc(sub) + '</div>' : '') + '</div>'; }
+
+// ---------- the report ----------
+function reportSummaryHTML(R, compact){
+  const nD = R.days.length; const a = R.avg;
+  let h = '<div class="rep-tiles">' +
+    statTile('Days logged', R.logged.length + ' of ' + nD, R.entriesN + ' foods in all') +
+    statTile('Energy, average logged day', fmtInt(a.kcal) + ' kcal', 'Reference about ' + fmtInt(R.r.kcal)) +
+    statTile('Protein, carbs, fat', fmtInt(a.p) + ' / ' + fmtInt(a.c) + ' / ' + fmtInt(a.f) + ' g', 'Average logged day') +
+    statTile('Fiber', fmt1(a.fiber) + ' g', 'Average logged day') +
+    (compact ? '' : statTile('Added sugar', fmt1(a.added) + ' g', 'Where the label lists it') + statTile('Sodium', fmtInt(a.sodium) + ' mg', 'Where the label lists it')) +
+    (compact ? statTile('Fueled days', R.days.filter(x => fueledDay(getDay(x.date))).length + ' of ' + nD, 'Breakfast, lunch, dinner and 3 groups') : '') +
+    statTile('Water', fmt1(R.waterAvg) + ' cups', 'Average logged day') +
+    (compact ? '' : statTile('Energy check-in', R.energyAvg == null ? 'None' : fmt1(R.energyAvg) + ' of 4', 'How she said she felt')) +
+    '</div>';
+  h += vizColumns({ title: 'Energy per day', sub: 'Calories logged each day. The line is the reference for her age and activity.', items: R.days.map(x => ({ label: shortDate(x.date), v: Math.round(x.t.kcal), tip: WEEKDAYS[parseDate(x.date).getDay()] + ' ' + shortDate(x.date) + ', ' + fmtInt(x.t.kcal) + ' kcal, ' + x.n + ' foods' })), ref: R.r.kcal, refLabel: 'Reference ' + fmtInt(R.r.kcal), color: 'var(--viz-energy)', unit: 'kcal' });
+  h += vizSegments('Where the energy came from', 'Share of calories from protein, carbohydrate and fat, averaged over logged days', [
+    { name: 'Protein', v: R.share.p, color: 'var(--viz-protein)' }, { name: 'Carbohydrate', v: R.share.c, color: 'var(--viz-carb)' }, { name: 'Fat', v: R.share.f, color: 'var(--viz-fat)', dark: true }]);
+  h += vizGrid('Meals logged', 'A filled square means at least one food was logged for that meal', REPORT_MEALS.map(m => { const meal = MEALS.find(x => x.id === m); const nm = meal ? meal.name : m; return { label: nm, on: d => { const x = R.days.find(y => y.date === d); return !!(x && x.meals[m].length); }, tip: d => { const x = R.days.find(y => y.date === d); const k = x ? x.meals[m] : []; return nm + ' ' + shortDate(d) + (k.length ? ', ' + k.map(e => e.name).join(', ') : ', nothing logged'); } }; }), R.days.map(x => x.date), 'var(--viz-energy)');
+  h += vizGrid('Food groups', 'A filled square means the group showed up that day', GROUPS.map(gr => ({ label: gr.name, on: d => { const x = R.days.find(y => y.date === d); return !!(x && x.groups.has(gr.id)); } })), R.days.map(x => x.date), 'var(--viz-energy)');
+  if (!compact) {
+    h += '<div class="rep-pair">' +
+      vizColumns({ title: 'Fiber per day', sub: 'Grams', items: R.days.map(x => ({ label: shortDate(x.date), v: round1(x.t.fiber), tip: shortDate(x.date) + ', ' + fmt1(x.t.fiber) + ' g fiber' })), color: 'var(--viz-energy)', unit: 'g', height: 180 }) +
+      vizColumns({ title: 'Added sugar per day', sub: 'Grams, from labels that list it', items: R.days.map(x => ({ label: shortDate(x.date), v: round1(x.t.added), tip: shortDate(x.date) + ', ' + fmt1(x.t.added) + ' g added sugar' })), color: 'var(--viz-energy)', unit: 'g', height: 180 }) + '</div>';
+  }
+  return h;
+}
+function reportFoodsHTML(R){
+  if (!R.topFoods.length) return '';
+  return '<h3 class="rep-h3">Most logged foods</h3><table class="rep-table"><thead><tr><th>Food</th><th class="n">Times</th><th class="n">kcal in all</th><th>Groups</th></tr></thead><tbody>' +
+    R.topFoods.map(f => '<tr><td>' + esc(f.name) + '</td><td class="n">' + f.count + '</td><td class="n">' + fmtInt(f.kcal) + '</td><td>' + esc(Array.from(f.groups).map(gid => (GROUPS.find(g => g.id === gid) || {}).name || gid).join(', ')) + '</td></tr>').join('') + '</tbody></table>';
+}
+function reportEntriesHTML(R){
+  let h = '<h3 class="rep-h3">Every entry, day by day</h3>';
+  R.days.slice().reverse().forEach(x => {
+    h += '<section class="rep-day"><div class="rep-day-head"><b>' + esc(longDate(x.date)) + '</b><span>' + (x.n ? fmtInt(x.t.kcal) + ' kcal · P ' + fmtInt(x.t.p) + ' g · C ' + fmtInt(x.t.c) + ' g · F ' + fmtInt(x.t.f) + ' g · water ' + x.water + ' cups' : 'Nothing logged') + '</span></div>';
+    if (x.n) {
+      h += '<table class="rep-table"><thead><tr><th>Meal</th><th>Food</th><th>Amount</th><th class="n">kcal</th><th class="n">P g</th><th class="n">C g</th><th class="n">F g</th><th class="n">Fiber</th><th class="n">Added sugar</th><th class="n">Sodium mg</th><th>Logged</th></tr></thead><tbody>';
+      REPORT_MEALS.forEach(m => x.meals[m].forEach(e => { const t = entryTotals(e); const meal = MEALS.find(z => z.id === m); h += '<tr><td>' + esc(meal ? meal.name : m) + '</td><td>' + esc(e.name) + '</td><td>' + esc(servingLabel(e)) + '</td><td class="n">' + fmtInt(t.kcal) + '</td><td class="n">' + fmt1(t.p) + '</td><td class="n">' + fmt1(t.c) + '</td><td class="n">' + fmt1(t.f) + '</td><td class="n">' + (e.per.fiber == null ? '' : fmt1(t.fiber)) + '</td><td class="n">' + (e.per.added == null ? '' : fmt1(t.added)) + '</td><td class="n">' + (e.per.sodium == null ? '' : fmtInt(t.sodium)) + '</td><td class="muted">' + esc((e.createdAt ? new Date(e.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '') + (e.by ? ', ' + e.by : '')) + '</td></tr>'; }));
+      h += '</tbody></table>';
+    }
+    h += '</section>';
+  });
+  return h;
+}
+function reportHTML(R){
+  const s = R.s; const act = ACTIVITIES.find(x => x.id === s.activity) || ACTIVITIES[1];
+  return '<article class="rep">' +
+    '<header class="rep-head"><div class="rep-kicker">Food journal report</div><h2>' + esc(s.name || 'Food Detective journal') + '</h2>' +
+    '<div class="rep-meta">' + esc(rangeText(R.start, R.end)) + ' · age ' + esc(String(s.age)) + ' · ' + esc(act.name.toLowerCase()) + ' · generated ' + esc(new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })) + '</div></header>' +
+    reportSummaryHTML(R, false) + reportFoodsHTML(R) + reportEntriesHTML(R) +
+    '<footer class="rep-foot">Logged in Food Detective by the child and her parents on their own devices. Amounts are what was entered. Nutrition values come from food labels, barcode lookups (Open Food Facts) or the app’s food list, so treat them as estimates. Fiber, added sugar and sodium count only foods whose label lists them. The reference energy is a general estimate for age and activity from the Dietary Guidelines for Americans, not a prescription.</footer></article>';
+}
+function renderReport(){
+  if (!ui.gate) return renderGrownups();
+  const rr = ui.report || (ui.report = Object.assign({ preset: '7' }, presetRange('7')));
+  const R = reportData(rr.start, rr.end);
+  const presets = [['7', '7 days'], ['14', '14 days'], ['30', '30 days'], ['month', 'This month'], ['all', 'All']];
+  return '<div class="rep-tools no-print"><button class="link" data-action="goto" data-view="grownups">‹ Chief’s office</button>' +
+    '<h2 style="margin:6px 0 10px">Report for a nutritionist or doctor</h2>' +
+    '<div class="seg" role="group" aria-label="Date range">' + presets.map(p => '<button type="button" class="' + (rr.preset === p[0] ? 'on' : '') + '" data-action="report-range" data-range="' + p[0] + '">' + p[1] + '</button>').join('') + '</div>' +
+    '<div class="grid2" style="margin-top:8px"><div class="field"><label for="rep-start">From</label><input id="rep-start" class="input" type="date" data-report="start" value="' + rr.start + '" max="' + todayStr() + '"></div><div class="field"><label for="rep-end">To</label><input id="rep-end" class="input" type="date" data-report="end" value="' + rr.end + '" max="' + todayStr() + '"></div></div>' +
+    '<div class="stack"><button class="btn block" data-action="report-print">\u{1F5A8}️ Print or save as PDF</button><button class="btn secondary block" data-action="report-excel">\u{1F4CA} Excel workbook with charts</button></div>' +
+    '<p class="hint">The PDF is easiest to send to a doctor. The Excel workbook has the same charts plus every entry in a sortable table.</p></div>' +
+    reportHTML(R);
+}
+function dashboardCardHTML(){
+  const R = reportData(addDays(todayStr(), -6), todayStr());
+  return '<section class="card" id="dash-card"><div class="card-head"><h2>Dashboard</h2><span class="small muted">last 7 days</span></div>' + reportSummaryHTML(R, true) +
+    '<div class="row" style="margin-top:10px;flex-wrap:wrap;gap:8px"><button class="btn sm" data-action="goto" data-view="report">Open the full report</button><button class="btn sm secondary" data-action="report-excel-quick">Excel</button></div></section>';
+}
+async function saveOrShare(name, blob){
+  const mobile = /iPhone|iPad|Android/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  try {
+    const file = new File([blob], name, { type: blob.type });
+    if (mobile && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast('Saved ' + name);
+}
+function reportFileName(R, ext){ return 'food-journal-' + (R.s.name ? R.s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' : '') + R.start + '-to-' + R.end + '.' + ext; }
+function downloadExcel(R){ try { saveOrShare(reportFileName(R, 'xlsx'), buildWorkbook(R)); } catch (e) { console.error(e); toast('Could not build the Excel file'); } }
+// ---------- Excel workbook with native charts (built on the device, no server) ----------
+// A small stored-zip writer plus hand-written SpreadsheetML: Summary (charts at the top, key figures below),
+// Daily totals, Entries (one row per food), Foods, About.
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(bytes){ let c = 0xFFFFFFFF; for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files){
+  const enc = new TextEncoder(); const parts = []; const central = []; let offset = 0;
+  const u16 = n => [n & 255, (n >>> 8) & 255]; const u32 = n => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+  files.forEach(f => {
+    const name = enc.encode(f.name); const data = typeof f.data === 'string' ? enc.encode(f.data) : f.data; const crc = crc32(data);
+    const head = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0));
+    parts.push(new Uint8Array(head), name, data);
+    central.push(new Uint8Array([].concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset))), name);
+    offset += head.length + name.length + data.length;
+  });
+  const cdSize = central.reduce((a, b) => a + b.length, 0);
+  const end = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(cdSize), u32(offset), u16(0)));
+  return new Blob(parts.concat(central, [end]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+function xq(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, ''); }
+function colName(i){ let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+// styles: 0 normal, 1 header, 2 title, 3 integer, 4 one decimal, 5 percent, 6 muted, 7 bold
+function cellXML(ref, v, st){
+  if (v == null || v === '' || (typeof v === 'number' && !isFinite(v))) return st ? '<c r="' + ref + '" s="' + st + '"/>' : '';
+  if (typeof v === 'number') return '<c r="' + ref + '"' + (st ? ' s="' + st + '"' : '') + '><v>' + v + '</v></c>';
+  return '<c r="' + ref + '" t="inlineStr"' + (st ? ' s="' + st + '"' : '') + '><is><t xml:space="preserve">' + xq(v) + '</t></is></c>';
+}
+function sheetXML(rows, opts){
+  opts = opts || {};
+  const cols = opts.widths ? '<cols>' + opts.widths.map((w, i) => '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>').join('') + '</cols>' : '';
+  const views = '<sheetViews><sheetView workbookViewId="0"' + (opts.first ? ' tabSelected="1"' : '') + '>' + (opts.freeze ? '<pane ySplit="' + opts.freeze + '" topLeftCell="A' + (opts.freeze + 1) + '" activePane="bottomLeft" state="frozen"/>' : '') + '</sheetView></sheetViews>';
+  const data = rows.map((row, ri) => { if (!row) return ''; const cells = row.map((c, ci) => { const o = c && typeof c === 'object' ? c : { v: c }; return cellXML(colName(ci) + (ri + 1), o.v, o.s || 0); }).join(''); return cells ? '<row r="' + (ri + 1) + '">' + cells + '</row>' : ''; }).join('');
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    (opts.landscape ? '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' : '') + views + '<sheetFormatPr defaultRowHeight="15"/>' + cols + '<sheetData>' + data + '</sheetData>' +
+    (opts.filter ? '<autoFilter ref="' + opts.filter + '"/>' : '') +
+    '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>' +
+    (opts.landscape ? '<pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/>' : '') +
+    (opts.drawing ? '<drawing r:id="rId1"/>' : '') + '</worksheet>';
+}
+function strCache(vals){ return '<c:strCache><c:ptCount val="' + vals.length + '"/>' + vals.map((v, i) => '<c:pt idx="' + i + '"><c:v>' + xq(v) + '</c:v></c:pt>').join('') + '</c:strCache>'; }
+function numCache(vals, fmt){ return '<c:numCache><c:formatCode>' + xq(fmt || 'General') + '</c:formatCode><c:ptCount val="' + vals.length + '"/>' + vals.map((v, i) => v == null ? '' : '<c:pt idx="' + i + '"><c:v>' + v + '</c:v></c:pt>').join('') + '</c:numCache>'; }
+function serXML(kind, i, s){
+  const fill = kind === 'line' ? '<c:spPr><a:ln w="22225" cap="rnd"><a:solidFill><a:srgbClr val="' + s.color + '"/></a:solidFill><a:round/></a:ln></c:spPr><c:marker><c:symbol val="none"/></c:marker>' : '<c:spPr><a:solidFill><a:srgbClr val="' + s.color + '"/></a:solidFill></c:spPr><c:invertIfNegative val="0"/>';
+  const lbl = s.labels ? '<c:dLbls><c:numFmt formatCode="0%" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr><c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1000" b="1"><a:solidFill><a:srgbClr val="' + (s.labelDark ? '1F2A44' : 'FFFFFF') + '"/></a:solidFill></a:defRPr></a:pPr><a:endParaRPr lang="en-US"/></a:p></c:txPr><c:showLegendKey val="0"/><c:showVal val="1"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/></c:dLbls>' : '';
+  return '<c:ser><c:idx val="' + i + '"/><c:order val="' + i + '"/><c:tx><c:strRef><c:f>' + s.nameRef + '</c:f>' + strCache([s.name]) + '</c:strRef></c:tx>' + fill + lbl +
+    '<c:cat><c:strRef><c:f>' + s.catRef + '</c:f>' + strCache(s.cats) + '</c:strRef></c:cat><c:val><c:numRef><c:f>' + s.valRef + '</c:f>' + numCache(s.vals, s.fmt) + '</c:numRef></c:val>' + (kind === 'line' ? '<c:smooth val="0"/>' : '') + '</c:ser>';
+}
+function chartXML(o){
+  const txt = (t, sz, b) => '<c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="' + sz + '" b="' + (b ? 1 : 0) + '"/></a:pPr><a:r><a:rPr lang="en-US" sz="' + sz + '" b="' + (b ? 1 : 0) + '"/><a:t>' + xq(t) + '</a:t></a:r></a:p></c:rich></c:tx>';
+  const axTx = '<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="900"><a:solidFill><a:srgbClr val="64789A"/></a:solidFill></a:defRPr></a:pPr><a:endParaRPr lang="en-US"/></a:p></c:txPr>';
+  const hair = '<c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="DDE5EE"/></a:solidFill></a:ln></c:spPr>';
+  const bar = '<c:barChart><c:barDir val="' + (o.barDir || 'col') + '"/><c:grouping val="' + (o.grouping || 'clustered') + '"/><c:varyColors val="0"/>' + o.series.map((s, i) => serXML('bar', i, s)).join('') + '<c:gapWidth val="' + (o.gap || 80) + '"/>' + (o.grouping === 'percentStacked' || o.grouping === 'stacked' ? '<c:overlap val="100"/>' : '') + '<c:axId val="5001"/><c:axId val="5002"/></c:barChart>';
+  const line = o.line ? '<c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>' + serXML('line', o.series.length, o.line) + '<c:marker val="1"/><c:axId val="5001"/><c:axId val="5002"/></c:lineChart>' : '';
+  const horiz = o.barDir === 'bar';
+  const cat = '<c:catAx><c:axId val="5001"/><c:scaling><c:orientation val="' + (horiz ? 'maxMin' : 'minMax') + '"/></c:scaling><c:delete val="' + (o.hideCat ? 1 : 0) + '"/><c:axPos val="' + (horiz ? 'l' : 'b') + '"/><c:numFmt formatCode="General" sourceLinked="1"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/>' + hair + axTx + '<c:crossAx val="5002"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>';
+  const val = '<c:valAx><c:axId val="5002"/><c:scaling><c:orientation val="minMax"/>' + (o.max != null ? '<c:max val="' + o.max + '"/>' : '') + '<c:min val="0"/></c:scaling><c:delete val="' + (o.hideVal ? 1 : 0) + '"/><c:axPos val="' + (horiz ? 'b' : 'l') + '"/>' + (o.hideVal ? '' : '<c:majorGridlines>' + hair + '</c:majorGridlines>') + '<c:numFmt formatCode="' + xq(o.valFmt || '#,##0') + '" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr>' + axTx + '<c:crossAx val="5001"/><c:crosses val="' + (horiz ? 'max' : 'autoZero') + '"/><c:crossBetween val="between"/>' + (o.majorUnit ? '<c:majorUnit val="' + o.majorUnit + '"/>' : '') + '</c:valAx>';
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/>' +
+    '<c:chart><c:title>' + txt(o.title, 1200, true) + '<c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/><c:plotArea><c:layout/>' + bar + line + cat + val + '</c:plotArea>' +
+    (o.legend ? '<c:legend><c:legendPos val="b"/><c:overlay val="0"/>' + axTx + '</c:legend>' : '') + '<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart>' +
+    '<c:spPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln><a:noFill/></a:ln></c:spPr></c:chartSpace>';
+}
+function anchorXML(id, c1, r1, c2, r2){
+  return '<xdr:twoCellAnchor editAs="oneCell"><xdr:from><xdr:col>' + c1 + '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + r1 + '</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>' + c2 + '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + r2 + '</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>' +
+    '<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="' + (id + 1) + '" name="Chart ' + id + '"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="rId' + id + '"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor>';
+}
+function buildWorkbook(R){
+  const s = R.s; const n = R.days.length; const act = ACTIVITIES.find(x => x.id === s.activity) || ACTIVITIES[1];
+  const H = t => ({ v: t, s: 1 }); const I = v => ({ v: v == null ? null : Math.round(v), s: 3 }); const D1 = v => ({ v: v == null ? null : Math.round(v * 10) / 10, s: 4 });
+  const dayLabel = d => WEEKDAYS[parseDate(d).getDay()].slice(0, 3) + ' ' + shortDate(d);
+  const mealName = m => (MEALS.find(x => x.id === m) || { name: m }).name;
+  const groupNames = ids => Array.from(ids || []).map(g => (GROUPS.find(x => x.id === g) || { name: g }).name).join(', ');
+  // Daily totals
+  const daily = [[H('Date'), H('Day'), H('Foods logged'), H('Breakfast foods'), H('Lunch foods'), H('Dinner foods'), H('Snack foods'), H('Meals logged'), H('Energy kcal'), H('Protein g'), H('Carbohydrate g'), H('Fat g'), H('Fiber g'), H('Added sugar g'), H('Sodium mg'), H('Water cups'), H('Energy check-in (1 to 4)'), H('Food groups'), H('Reference kcal')]];
+  R.days.forEach(x => {
+    const ml = ['breakfast', 'lunch', 'dinner', 'snack'].filter(m => x.meals[m].length).length;
+    daily.push([x.date, dayLabel(x.date), x.n, x.meals.breakfast.length, x.meals.lunch.length, x.meals.dinner.length, x.meals.snack.length, ml, I(x.t.kcal), D1(x.t.p), D1(x.t.c), D1(x.t.f), D1(x.t.fiber), D1(x.t.added), I(x.t.sodium), x.water, x.energy, groupNames(x.groups), I(R.r.kcal)]);
+  });
+  // Entries
+  const entries = [[H('Date'), H('Day'), H('Meal'), H('Food'), H('Amount eaten'), H('Servings'), H('Serving size'), H('Energy kcal'), H('Protein g'), H('Carbohydrate g'), H('Fat g'), H('Fiber g'), H('Sugar g'), H('Added sugar g'), H('Sodium mg'), H('Food groups'), H('Processing level'), H('Source'), H('Logged at'), H('Logged on'), H('Note')]];
+  R.days.forEach(x => ['breakfast', 'lunch', 'dinner', 'snack'].forEach(m => x.meals[m].forEach(e => {
+    const t = entryTotals(e); const lv = LEVELS.find(l => l.id === e.level);
+    entries.push([x.date, dayLabel(x.date), mealName(m), e.name, servingLabel(e), D1(e.qty), e.serving, I(t.kcal), D1(t.p), D1(t.c), D1(t.f), e.per.fiber == null ? null : D1(t.fiber), e.per.sugar == null ? null : D1(t.sugar), e.per.added == null ? null : D1(t.added), e.per.sodium == null ? null : I(t.sodium), groupNames(e.groups), lv ? lv.short + ', ' + lv.name : '', SRC_NAMES[e.src] || '', e.createdAt ? new Date(e.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '', e.by || '', e.note || '']);
+  })));
+  // Foods
+  const foods = [[H('Food'), H('Times logged'), H('Energy kcal in all'), H('Food groups')]].concat(R.topFoods.map(f => [f.name, f.count, I(f.kcal), groupNames(f.groups)]));
+  // Summary: rows 1 to 3 header, charts in rows 5 to 40, key figures from row 42
+  const a = R.avg; const SUMROW = 42;
+  const sum = [];
+  sum[0] = [{ v: 'Food journal report' + (s.name ? ', ' + s.name : ''), s: 2 }];
+  sum[1] = [{ v: rangeText(R.start, R.end) + ', age ' + s.age + ', ' + act.name.toLowerCase(), s: 7 }];
+  sum[2] = [{ v: 'Generated ' + new Date().toLocaleString() + ' from Food Detective. Charts are built from the Daily totals sheet; every food is on the Entries sheet.', s: 6 }];
+  const kf = [
+    [H('Key figures'), H('Value'), H('Notes')],
+    ['Days in the report', n, ''],
+    ['Days with food logged', R.logged.length, ''],
+    ['Foods logged', R.entriesN, ''],
+    ['Energy, average logged day (kcal)', I(a.kcal), 'Reference about ' + fmtInt(R.r.kcal) + ' kcal for age and activity'],
+    ['Protein, average logged day (g)', D1(a.p), ''],
+    ['Carbohydrate, average logged day (g)', D1(a.c), ''],
+    ['Fat, average logged day (g)', D1(a.f), ''],
+    ['Fiber, average logged day (g)', D1(a.fiber), 'Only foods whose label lists it'],
+    ['Added sugar, average logged day (g)', D1(a.added), 'Only foods whose label lists it'],
+    ['Sodium, average logged day (mg)', I(a.sodium), 'Only foods whose label lists it'],
+    ['Water, average logged day (cups)', D1(R.waterAvg), ''],
+    ['Energy from protein', { v: Math.round(R.share.p * 1000) / 1000, s: 5 }, 'Share of calories, averaged over logged days'],
+    ['Energy from carbohydrate', { v: Math.round(R.share.c * 1000) / 1000, s: 5 }, ''],
+    ['Energy from fat', { v: Math.round(R.share.f * 1000) / 1000, s: 5 }, ''],
+    ['Days with breakfast logged', R.mealDays.breakfast, ''],
+    ['Days with lunch logged', R.mealDays.lunch, ''],
+    ['Days with dinner logged', R.mealDays.dinner, '']
+  ].concat(GROUPS.map(g => ['Days with ' + g.name.toLowerCase(), R.groupDays[g.id], '']));
+  kf.forEach((row, i) => { sum[SUMROW - 1 + i] = row; });
+  const shareRow = SUMROW - 1 + 12; // zero-based index of "Energy from protein"
+  const DT = "'Daily totals'"; const last = n + 1;
+  const cats = R.days.map(x => dayLabel(x.date));
+  const charts = [
+    chartXML({ title: 'Energy per day (kcal)', series: [{ name: 'Energy kcal', nameRef: DT + '!$I$1', catRef: DT + '!$B$2:$B$' + last, valRef: DT + '!$I$2:$I$' + last, cats, vals: R.days.map(x => Math.round(x.t.kcal)), color: '2F8FD6' }], line: { name: 'Reference kcal', nameRef: DT + '!$S$1', catRef: DT + '!$B$2:$B$' + last, valRef: DT + '!$S$2:$S$' + last, cats, vals: R.days.map(() => Math.round(R.r.kcal)), color: '9AA8BC' }, legend: true }),
+    chartXML({ title: 'Where the energy came from', barDir: 'bar', grouping: 'percentStacked', gap: 40, hideCat: true, hideVal: true, valFmt: '0%', legend: true, series: [
+      { name: 'Protein', nameRef: 'Summary!$A$' + (shareRow + 1), catRef: 'Summary!$A$' + (shareRow + 1), valRef: 'Summary!$B$' + (shareRow + 1), cats: ['Average day'], vals: [Math.round(R.share.p * 1000) / 1000], color: 'D4598F', fmt: '0%', labels: true },
+      { name: 'Carbohydrate', nameRef: 'Summary!$A$' + (shareRow + 2), catRef: 'Summary!$A$' + (shareRow + 1), valRef: 'Summary!$B$' + (shareRow + 2), cats: ['Average day'], vals: [Math.round(R.share.c * 1000) / 1000], color: '8470C9', fmt: '0%', labels: true },
+      { name: 'Fat', nameRef: 'Summary!$A$' + (shareRow + 3), catRef: 'Summary!$A$' + (shareRow + 1), valRef: 'Summary!$B$' + (shareRow + 3), cats: ['Average day'], vals: [Math.round(R.share.f * 1000) / 1000], color: 'C28B1C', fmt: '0%', labels: true, labelDark: true }] }),
+    chartXML({ title: 'Meals logged per day (breakfast, lunch, dinner, snack)', max: 4, majorUnit: 1, series: [{ name: 'Meals logged', nameRef: DT + '!$H$1', catRef: DT + '!$B$2:$B$' + last, valRef: DT + '!$H$2:$H$' + last, cats, vals: R.days.map(x => ['breakfast', 'lunch', 'dinner', 'snack'].filter(m => x.meals[m].length).length), color: '2F8FD6' }] }),
+    chartXML({ title: 'Fiber and added sugar per day (g)', legend: true, series: [
+      { name: 'Fiber g', nameRef: DT + '!$M$1', catRef: DT + '!$B$2:$B$' + last, valRef: DT + '!$M$2:$M$' + last, cats, vals: R.days.map(x => Math.round(x.t.fiber * 10) / 10), color: '2A78D6' },
+      { name: 'Added sugar g', nameRef: DT + '!$N$1', catRef: DT + '!$B$2:$B$' + last, valRef: DT + '!$N$2:$N$' + last, cats, vals: R.days.map(x => Math.round(x.t.added * 10) / 10), color: 'EB6834' }] })
+  ];
+  const drawing = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    anchorXML(1, 0, 4, 4, 21) + anchorXML(2, 4, 4, 8, 21) + anchorXML(3, 0, 22, 4, 39) + anchorXML(4, 4, 22, 8, 39) + '</xdr:wsDr>';
+  const about = [[{ v: 'About this workbook', s: 2 }], [], ['Logged in Food Detective by the child and her parents on their own devices. Amounts are what was entered.'], ['Nutrition values come from food labels, barcode lookups (Open Food Facts) or the app’s food list, so treat them as estimates.'], ['Fiber, added sugar and sodium count only foods whose label lists them. Empty cells mean the value was not on the label.'], ['The reference energy is a general estimate for age and activity from the Dietary Guidelines for Americans, not a prescription.'], ['Product data from Open Food Facts is available under the Open Database License (openfoodfacts.org).']];
+  const ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' + [1, 2, 3, 4, 5].map(i => '<Override PartName="/xl/worksheets/sheet' + i + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('') +
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>' +
+    [1, 2, 3, 4].map(i => '<Override PartName="/xl/charts/chart' + i + '.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>').join('') +
+    '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>';
+  const rel = (id, type, target) => '<Relationship Id="' + id + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/' + type + '" Target="' + target + '"/>';
+  const rels = body => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + body + '</Relationships>';
+  const names = ['Summary', 'Daily totals', 'Entries', 'Foods', 'About'];
+  const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="0.0"/><numFmt numFmtId="165" formatCode="0%"/></numFmts>' +
+    '<fonts count="4"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="16"/><name val="Calibri"/><family val="2"/></font><font><sz val="10"/><color rgb="FF64789A"/><name val="Calibri"/><family val="2"/></font></fonts>' +
+    '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD5EAF9"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="8"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>' +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  const files = [
+    { name: '[Content_Types].xml', data: ct },
+    { name: '_rels/.rels', data: rels(rel('rId1', 'officeDocument', 'xl/workbook.xml') + '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>' + rel('rId3', 'extended-properties', 'docProps/app.xml')) },
+    { name: 'docProps/core.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>' + xq('Food journal report ' + R.start + ' to ' + R.end) + '</dc:title><dc:creator>Food Detective</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">' + new Date().toISOString().replace(/\.\d+Z$/, 'Z') + '</dcterms:created></cp:coreProperties>' },
+    { name: 'docProps/app.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Food Detective</Application></Properties>' },
+    { name: 'xl/workbook.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView activeTab="0"/></bookViews><sheets>' + names.map((nm, i) => '<sheet name="' + xq(nm) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join('') + '</sheets>' + (entries.length > 1 ? '<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="2" hidden="1">Entries!$A$1:$U$' + entries.length + '</definedName></definedNames>' : '') + '</workbook>' },
+    { name: 'xl/_rels/workbook.xml.rels', data: rels(names.map((nm, i) => rel('rId' + (i + 1), 'worksheet', 'worksheets/sheet' + (i + 1) + '.xml')).join('') + rel('rId6', 'styles', 'styles.xml')) },
+    { name: 'xl/styles.xml', data: styles },
+    { name: 'xl/worksheets/sheet1.xml', data: sheetXML(sum, { widths: [38, 14, 50, 12, 12, 12, 12, 12], drawing: true, first: true, landscape: true }) },
+    { name: 'xl/worksheets/_rels/sheet1.xml.rels', data: rels(rel('rId1', 'drawing', '../drawings/drawing1.xml')) },
+    { name: 'xl/drawings/drawing1.xml', data: drawing },
+    { name: 'xl/drawings/_rels/drawing1.xml.rels', data: rels([1, 2, 3, 4].map(i => rel('rId' + i, 'chart', '../charts/chart' + i + '.xml')).join('')) },
+    { name: 'xl/charts/chart1.xml', data: charts[0] }, { name: 'xl/charts/chart2.xml', data: charts[1] }, { name: 'xl/charts/chart3.xml', data: charts[2] }, { name: 'xl/charts/chart4.xml', data: charts[3] },
+    { name: 'xl/worksheets/sheet2.xml', data: sheetXML(daily, { widths: [12, 11, 8, 10, 8, 8, 8, 8, 10, 10, 13, 8, 8, 12, 10, 8, 12, 36, 12], freeze: 1, landscape: true }) },
+    { name: 'xl/worksheets/sheet3.xml', data: sheetXML(entries, { widths: [12, 11, 11, 32, 18, 9, 16, 10, 10, 13, 8, 8, 8, 12, 10, 26, 30, 16, 18, 18, 30], freeze: 1, filter: entries.length > 1 ? 'A1:U' + entries.length : '', landscape: true }) },
+    { name: 'xl/worksheets/sheet4.xml', data: sheetXML(foods, { widths: [36, 13, 16, 30], freeze: 1 }) },
+    { name: 'xl/worksheets/sheet5.xml', data: sheetXML(about, { widths: [120] }) }
+  ];
+  return zipStore(files);
+}
 
 // ---------- toasts and celebrations ----------
 const toastQ = []; let toastBusy = false;
@@ -2661,6 +3049,10 @@ const ACTIONS = {
   'family-disconnect-yes': () => { ui.confirmLeave = false; leaveFamily(); toast('This device is disconnected'); },
   'family-share': () => { shareJoinLink(); },
   'sync-open': () => { openSyncSheet(); syncNow(); },
+  'report-range': el => { const id = el.dataset.range; ui.report = Object.assign({ preset: id }, presetRange(id)); renderView(); },
+  'report-print': () => { try { window.print(); } catch (e) { toast('Printing is not available in this browser'); } },
+  'report-excel': () => { const rr = ui.report || presetRange('7'); downloadExcel(reportData(rr.start, rr.end)); },
+  'report-excel-quick': () => { downloadExcel(reportData(addDays(todayStr(), -6), todayStr())); },
   'sync-now': () => { syncNow(); toast('Syncing with the family journal\u2026'); },
   'toggle-group': el => { readDraftFromForm(); const d = ui.sheet.draft; const g = el.dataset.g; d.groups = d.groups || []; const i = d.groups.indexOf(g); if (i >= 0) d.groups.splice(i, 1); else d.groups.push(g); el.classList.toggle('on', i < 0); el.setAttribute('aria-pressed', String(i < 0)); },
   'set-level': el => { readDraftFromForm(); const d = ui.sheet.draft; const k = parseInt(el.dataset.k, 10); d.level = d.level === k ? null : k; renderSheet(); },
@@ -2735,6 +3127,7 @@ function bindEvents(){
   document.addEventListener('change', e => {
     const t = e.target;
     if (t.id === 'f-unit') { ui.sheet.amountUnit = t.value; syncAmountFromQty(); return; }
+    if (t.dataset && t.dataset.report && /^\d{4}-\d{2}-\d{2}$/.test(t.value)) { const rr = ui.report || (ui.report = Object.assign({ preset: '7' }, presetRange('7'))); rr[t.dataset.report] = t.value > todayStr() ? todayStr() : t.value; if (rr.end < rr.start) { const x = rr.start; rr.start = rr.end; rr.end = x; } rr.preset = ''; renderView(); return; }
     if (t.dataset && t.dataset.reward) {
       const rw = state.meta.progress.rewards; const k = t.dataset.reward;
       if (k === 'weeklyGoal' || k === 'monthlyGoal') rw[k] = Math.max(1, Math.min(k === 'weeklyGoal' ? 999 : 9999, parseInt(t.value, 10) || rw[k]));
